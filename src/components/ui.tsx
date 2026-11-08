@@ -41,7 +41,7 @@ export function StatCard({
   return (
     <div className={cn("card p-6", className)}>
       <div className="text-sm text-muted">{label}</div>
-      <div className={cn("mt-3 text-3xl font-bold", accent ? "text-coral-500" : "text-ink")}>{value}</div>
+      <div className={cn("mt-3 text-3xl font-bold", accent ? "text-sage-600" : "text-ink")}>{value}</div>
       {hint && <div className="mt-2">{hint}</div>}
     </div>
   );
@@ -54,7 +54,7 @@ export function Trend({ pct, label }: { pct: number | null; label: string }) {
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs",
-        up ? "bg-success-bg text-success" : "bg-coral-50 text-coral-600",
+        up ? "bg-success-bg text-success" : "bg-danger-50 text-danger-600",
       )}
     >
       {up ? "▲" : "▼"} {up ? "+" : ""}
@@ -65,9 +65,9 @@ export function Trend({ pct, label }: { pct: number | null; label: string }) {
 
 export function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    ACTIVE: "bg-coral-500 text-white",
+    ACTIVE: "bg-sage-600 text-white",
     PENDING: "bg-amber-100 text-amber-800",
-    REJECTED: "bg-plum-100 text-plum-800",
+    REJECTED: "bg-sage-100 text-sage-800",
     ARCHIVED: "bg-line text-muted",
   };
   return (
@@ -79,8 +79,8 @@ export function StatusBadge({ status }: { status: string }) {
 
 export function Pill({ children, tone = "neutral" }: { children: React.ReactNode; tone?: "neutral" | "coral" | "green" | "amber" }) {
   const t = {
-    neutral: "bg-plum-50 text-plum-800",
-    coral: "bg-coral-100 text-coral-600",
+    neutral: "bg-sage-50 text-sage-800",
+    coral: "bg-danger-100 text-danger-600",
     green: "bg-success-bg text-success",
     amber: "bg-amber-100 text-amber-800",
   }[tone];
@@ -95,19 +95,19 @@ export function TabLinks({
   active: string;
 }) {
   return (
-    <div className="inline-flex gap-1 rounded-2xl bg-plum-50 p-1">
+    <div className="inline-flex gap-1 rounded-2xl bg-sage-50 p-1">
       {tabs.map((t) => (
         <Link
           key={t.key}
           href={t.href}
           className={cn(
             "inline-flex items-center gap-2 rounded-xl px-5 py-2 text-sm font-semibold transition",
-            active === t.key ? "bg-plum-900 text-white" : "text-muted hover:text-ink",
+            active === t.key ? "bg-sage-900 text-white" : "text-muted hover:text-ink",
           )}
         >
           {t.label}
           {t.badge ? (
-            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-coral-500 px-1 text-xs text-white">
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-sage-600 px-1 text-xs text-white">
               {t.badge}
             </span>
           ) : null}

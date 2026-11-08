@@ -85,7 +85,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                   </td>
                   <td className="px-4 py-4 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
                   <td className="px-4 py-4">{p.category ?? creator.name}</td>
-                  <td className={`px-4 py-4 text-right font-medium ${p.stock <= 0 ? "text-coral-600" : ""}`}>{p.stock}</td>
+                  <td className={`px-4 py-4 text-right font-medium ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-1">
                       <StatusBadge status={p.status} />

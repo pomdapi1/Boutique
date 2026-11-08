@@ -50,7 +50,7 @@ export function NotificationBell({ items }: { items: Item[] }) {
       <button onClick={toggle} className="relative text-muted hover:text-ink" aria-label="Notifications">
         <Bell size={22} />
         {unread > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-coral-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -top-1.5 -right-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-sage-600 px-1 text-[10px] font-bold text-white">
             {unread}
           </span>
         )}
@@ -63,7 +63,7 @@ export function NotificationBell({ items }: { items: Item[] }) {
             {items.map((n) => {
               const Icon = ICON[n.kind] ?? Info;
               const inner = (
-                <div className={cn("flex gap-4 px-5 py-4", !n.read && "bg-coral-50/60")}>
+                <div className={cn("flex gap-4 px-5 py-4", !n.read && "bg-sage-50/60")}>
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-cream text-muted">
                     <Icon size={18} />
                   </span>

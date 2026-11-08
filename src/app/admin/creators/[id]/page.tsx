@@ -65,7 +65,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
               />
             </div>
             <label className="flex items-center gap-2">
-              <input type="checkbox" name="active" defaultChecked={creator.active} className="h-4 w-4 accent-plum-900" /> Compte actif
+              <input type="checkbox" name="active" defaultChecked={creator.active} className="h-4 w-4 accent-sage-900" /> Compte actif
             </label>
             <SubmitButton>Enregistrer</SubmitButton>
           </ActionForm>
@@ -95,7 +95,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
                   {p.code} - {p.name}
                 </td>
                 <td className="px-5 py-3 text-right">{euros(p.priceCents)}</td>
-                <td className={`px-5 py-3 text-right ${p.stock <= 0 ? "text-coral-600" : ""}`}>{p.stock}</td>
+                <td className={`px-5 py-3 text-right ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
                 <td className="px-5 py-3">
                   <StatusBadge status={p.status} />
                 </td>

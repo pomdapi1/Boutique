@@ -56,7 +56,7 @@ export default async function AdminDashboard() {
             {todos.map((t) => (
               <li key={t.href}>
                 <Link href={t.href} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-cream">
-                  {t.n > 0 ? <AlertTriangle size={18} className="text-coral-500" /> : <CheckCircle2 size={18} className="text-success" />}
+                  {t.n > 0 ? <AlertTriangle size={18} className="text-danger-500" /> : <CheckCircle2 size={18} className="text-success" />}
                   <span className="flex-1">
                     <strong>{t.n}</strong> {t.label}
                   </span>
@@ -72,7 +72,7 @@ export default async function AdminDashboard() {
             Mode : <strong>{cfg.mode === "live" ? "Live (API SumUp)" : cfg.mode === "mock" ? "Simulation (mock)" : "Désactivé"}</strong>
           </p>
           <p className="mt-1 text-muted">Dernière exécution : {lastRun ? relativeLabel(new Date(lastRun)) : "jamais"}</p>
-          {lastError && <p className="mt-2 rounded-lg bg-coral-50 px-3 py-2 text-sm text-coral-600">{lastError}</p>}
+          {lastError && <p className="mt-2 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-600">{lastError}</p>}
           <Link href="/admin/settings" className="mt-4 inline-flex items-center gap-1 font-medium underline">
             Paramètres SumUp <ArrowRight size={16} />
           </Link>

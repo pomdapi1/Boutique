@@ -185,7 +185,7 @@ async function AllProducts({ sp, creators }: { sp: Record<string, string | undef
                 </td>
                 <td className="px-4 py-3">{p.creator.name}</td>
                 <td className="px-4 py-3 text-right">{euros(p.priceCents)}</td>
-                <td className={`px-4 py-3 text-right ${p.stock <= 0 ? "text-coral-600" : ""}`}>{p.stock}</td>
+                <td className={`px-4 py-3 text-right ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={p.status} />
                 </td>

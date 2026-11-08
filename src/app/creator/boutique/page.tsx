@@ -28,7 +28,7 @@ export default async function BoutiquePage() {
           <>
             <p>Le feed des ventes de la boutique en temps réel.</p>
             <p className="mt-1 flex items-center gap-2 text-sm">
-              <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-coral-600" />
+              <span className="inline-block h-2.5 w-2.5 rounded-full border-2 border-sage-700" />
               signale les paniers qui contiennent un de vos produits.
             </p>
           </>
@@ -38,11 +38,11 @@ export default async function BoutiquePage() {
       <div className="mb-10 flex flex-wrap gap-12">
         <div>
           <div className="eyebrow">Total du jour</div>
-          <div className="mt-1 text-4xl font-bold text-plum-900 sm:text-5xl">{euros(day.cents)}</div>
+          <div className="mt-1 text-4xl font-bold text-sage-900 sm:text-5xl">{euros(day.cents)}</div>
         </div>
         <div>
           <div className="eyebrow">Total du mois actuel</div>
-          <div className="mt-1 text-4xl font-bold text-plum-900 sm:text-5xl">{euros(mon.cents)}</div>
+          <div className="mt-1 text-4xl font-bold text-sage-900 sm:text-5xl">{euros(mon.cents)}</div>
         </div>
       </div>
       {sales.length === 0 ? (

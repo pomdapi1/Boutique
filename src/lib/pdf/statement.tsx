@@ -5,22 +5,22 @@ import { PAYMENT_LABEL } from "../constants";
 import type { Breakdown } from "../money";
 
 const s = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1d1a1b" },
-  brand: { fontSize: 22, color: "#f25f5c", fontFamily: "Helvetica-Bold", marginBottom: 4 },
+  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1f2420" },
+  brand: { fontSize: 22, color: "#626850", fontFamily: "Helvetica-Bold", marginBottom: 4 },
   title: { fontSize: 14, fontFamily: "Helvetica-Bold", marginBottom: 2 },
-  muted: { color: "#6f6866" },
-  summary: { flexDirection: "row", marginTop: 18, marginBottom: 18, borderWidth: 1, borderColor: "#ebe8e3", borderRadius: 6 },
-  cell: { flex: 1, padding: 10, borderRightWidth: 1, borderColor: "#ebe8e3" },
-  cellLabel: { fontSize: 8, color: "#6f6866", marginBottom: 4 },
+  muted: { color: "#66695e" },
+  summary: { flexDirection: "row", marginTop: 18, marginBottom: 18, borderWidth: 1, borderColor: "#e8e7df", borderRadius: 6 },
+  cell: { flex: 1, padding: 10, borderRightWidth: 1, borderColor: "#e8e7df" },
+  cellLabel: { fontSize: 8, color: "#66695e", marginBottom: 4 },
   cellValue: { fontSize: 12, fontFamily: "Helvetica-Bold" },
-  row: { flexDirection: "row", paddingVertical: 5, borderBottomWidth: 1, borderColor: "#f0ede8" },
-  head: { flexDirection: "row", paddingVertical: 6, borderBottomWidth: 1.5, borderColor: "#3a0b24", fontFamily: "Helvetica-Bold" },
+  row: { flexDirection: "row", paddingVertical: 5, borderBottomWidth: 1, borderColor: "#efeee8" },
+  head: { flexDirection: "row", paddingVertical: 6, borderBottomWidth: 1.5, borderColor: "#2f3227", fontFamily: "Helvetica-Bold" },
   c1: { width: 70 },
   c2: { flex: 1 },
   c3: { width: 45, textAlign: "right" },
   c4: { width: 55 },
   c5: { width: 70, textAlign: "right" },
-  footer: { position: "absolute", bottom: 24, left: 40, right: 40, fontSize: 8, color: "#6f6866", textAlign: "center" },
+  footer: { position: "absolute", bottom: 24, left: 40, right: 40, fontSize: 8, color: "#66695e", textAlign: "center" },
 });
 
 export type StatementItem = {

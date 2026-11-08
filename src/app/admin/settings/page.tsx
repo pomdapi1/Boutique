@@ -45,7 +45,7 @@ export default async function SettingsPage() {
             <dt className="text-muted">Ventes SumUp en base</dt>
             <dd>{sumupSales}</dd>
           </dl>
-          {lastError && <p className="mt-4 rounded-lg bg-coral-50 px-3 py-2 text-sm text-coral-600">{lastError}</p>}
+          {lastError && <p className="mt-4 rounded-lg bg-danger-50 px-3 py-2 text-sm text-danger-600">{lastError}</p>}
           <div className="mt-6 flex flex-wrap gap-3">
             <ActionForm action={syncNowAction}>
               <SubmitButton className="btn-dark" pendingLabel="Synchronisation…">

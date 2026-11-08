@@ -48,7 +48,7 @@ export function DocumentUpload({
         {replaceId ? <RefreshCw size={18} /> : <Upload size={18} />}
         {pending ? "Envoi…" : replaceId ? "Remplacer" : "Déposer un fichier"}
       </button>
-      {state?.error && <span className="mt-1 text-sm text-coral-600">{state.error}</span>}
+      {state?.error && <span className="mt-1 text-sm text-danger-600">{state.error}</span>}
     </form>
   );
 }

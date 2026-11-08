@@ -1,20 +1,27 @@
 @import "tailwindcss";
 
 @theme {
-  --color-plum-950: #2c0719;
-  --color-plum-900: #3a0b24;
-  --color-plum-800: #4d1633;
-  --color-plum-700: #5e2443;
-  --color-plum-100: #ece4e8;
-  --color-plum-50: #f5f0f2;
-  --color-coral-600: #e04848;
-  --color-coral-500: #f25f5c;
-  --color-coral-100: #fde4e2;
-  --color-coral-50: #fbefee;
-  --color-cream: #f8f7f4;
-  --color-line: #ebe8e3;
-  --color-ink: #1d1a1b;
-  --color-muted: #6f6866;
+  /* Vert sauge du logo « Les Songes Créatifs » : sage-500 = #767c62 */
+  --color-sage-950: #22241c;
+  --color-sage-900: #2f3227;
+  --color-sage-800: #3e4233;
+  --color-sage-700: #4f5440;
+  --color-sage-600: #626850;
+  --color-sage-500: #767c62;
+  --color-sage-400: #959b80;
+  --color-sage-300: #b4b9a1;
+  --color-sage-200: #d2d6c5;
+  --color-sage-100: #e6e8de;
+  --color-sage-50: #f4f5f0;
+  /* Alertes (erreurs, ruptures, baisses) : rouge, distinct de l'identité */
+  --color-danger-600: #b93a36;
+  --color-danger-500: #d9534f;
+  --color-danger-100: #f8dcda;
+  --color-danger-50: #fcefee;
+  --color-cream: #f9f8f3;
+  --color-line: #e8e7df;
+  --color-ink: #1f2420;
+  --color-muted: #66695e;
   --color-success: #1f7a4d;
   --color-success-bg: #e6f4ec;
   --color-card-blue: #2d5bd7;
@@ -34,39 +41,42 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-.logo {
-  font-family: var(--font-logo);
-  color: var(--color-coral-500);
-  letter-spacing: 0.01em;
-  transform: skewX(-8deg);
-  display: inline-block;
-  line-height: 1;
+/* En couche "components" pour qu'une classe text-* puisse changer la couleur (ex. sur fond sombre). */
+@layer components {
+  .logo {
+    font-family: var(--font-logo);
+    color: var(--color-sage-600);
+    letter-spacing: 0.01em;
+    transform: skewX(-8deg);
+    display: inline-block;
+    line-height: 1;
+  }
 }
 
 .btn {
   @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
 }
 .btn-primary {
-  @apply bg-coral-500 text-white hover:bg-coral-600;
+  @apply bg-sage-600 text-white hover:bg-sage-700;
 }
 .btn-dark {
-  @apply bg-plum-900 text-white hover:bg-plum-800;
+  @apply bg-sage-900 text-white hover:bg-sage-800;
 }
 .btn-outline {
   @apply border border-line bg-white text-ink hover:bg-cream;
 }
 .btn-ghost {
-  @apply text-ink hover:bg-plum-50;
+  @apply text-ink hover:bg-sage-50;
 }
 .btn-danger {
-  @apply border border-coral-100 bg-white text-coral-600 hover:bg-coral-50;
+  @apply border border-danger-100 bg-white text-danger-600 hover:bg-danger-50;
 }
 .btn-sm {
   @apply rounded-lg px-3 py-1.5 text-sm;
 }
 
 .input {
-  @apply w-full rounded-xl border border-line bg-cream px-4 py-2.5 text-sm outline-none transition placeholder:text-muted/70 focus:border-plum-700 focus:bg-white focus:ring-2 focus:ring-plum-100;
+  @apply w-full rounded-xl border border-line bg-cream px-4 py-2.5 text-sm outline-none transition placeholder:text-muted/70 focus:border-sage-600 focus:bg-white focus:ring-2 focus:ring-sage-100;
 }
 .label {
   @apply mb-1.5 block text-sm font-semibold;
@@ -78,13 +88,5 @@ body {
   @apply text-xs font-semibold tracking-wide text-muted uppercase;
 }
 .page-title {
-  @apply text-3xl font-bold text-plum-900 sm:text-4xl;
-}
-
-.hatch {
-  background-image: repeating-linear-gradient(
-    135deg,
-    var(--color-coral-500) 0 4px,
-    #f78a87 4px 7px
-  );
+  @apply text-3xl font-bold text-sage-900 sm:text-4xl;
 }

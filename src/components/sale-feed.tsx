@@ -30,7 +30,7 @@ export function SaleFeed({
         <section key={g.key}>
           <div className="mb-3 flex items-baseline justify-between">
             <h2 className="eyebrow text-sm">{g.label}</h2>
-            <span className="font-semibold text-plum-900">
+            <span className="font-semibold text-sage-900">
               {euros(g.rows.filter((s) => s.status === "SUCCESSFUL").reduce((a, s) => a + s.totalCents, 0))}
             </span>
           </div>
@@ -47,7 +47,7 @@ export function SaleFeed({
               const header = (
                 <div className="relative flex items-center gap-4 px-5 py-4">
                   {mine && (
-                    <span className="absolute top-3 left-2 h-2.5 w-2.5 rounded-full border-2 border-coral-600" title="Contient un de vos produits" />
+                    <span className="absolute top-3 left-2 h-2.5 w-2.5 rounded-full border-2 border-sage-700" title="Contient un de vos produits" />
                   )}
                   <PaymentIcon type={sale.paymentType} />
                   <div className="min-w-0 flex-1">
@@ -76,11 +76,11 @@ export function SaleFeed({
                           const isMine = highlightCreatorId && it.creatorId === highlightCreatorId;
                           return (
                             <li key={it.id} className="relative flex items-center gap-3 py-3 pr-14 pl-16 text-sm">
-                              {isMine && <span className="absolute left-10 h-2.5 w-2.5 rounded-full border-2 border-coral-600" />}
+                              {isMine && <span className="absolute left-10 h-2.5 w-2.5 rounded-full border-2 border-sage-700" />}
                               <span className="text-muted">x{it.quantity}</span>
                               <span className="flex-1">
                                 {d.title}
-                                {d.creator ? <span className="text-muted"> — {d.creator}</span> : <span className="text-coral-600"> (non attribué)</span>}
+                                {d.creator ? <span className="text-muted"> — {d.creator}</span> : <span className="text-danger-600"> (non attribué)</span>}
                               </span>
                               <span className="text-muted">{euros(it.totalCents)}</span>
                             </li>

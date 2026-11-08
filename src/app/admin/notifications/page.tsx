@@ -64,7 +64,7 @@ export default async function AdminNotificationsPage() {
                 </div>
                 <form action={deleteNotificationAction}>
                   <input type="hidden" name="id" value={n.id} />
-                  <button className="text-muted hover:text-coral-600" aria-label="Supprimer">
+                  <button className="text-muted hover:text-danger-600" aria-label="Supprimer">
                     <Trash2 size={16} />
                   </button>
                 </form>

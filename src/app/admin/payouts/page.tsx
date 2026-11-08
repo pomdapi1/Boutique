@@ -87,7 +87,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: SP }
                         <Pill tone="amber">À payer</Pill>
                       )}
                       {drift && (
-                        <div className="mt-1 text-xs text-coral-600" title="Des ventes ont changé après la clôture (remboursement, attribution manuelle…)">
+                        <div className="mt-1 text-xs text-danger-600" title="Des ventes ont changé après la clôture (remboursement, attribution manuelle…)">
                           Recalcul : {euros(computed.netCents)}
                         </div>
                       )}

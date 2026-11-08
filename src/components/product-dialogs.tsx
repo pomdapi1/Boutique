@@ -27,13 +27,13 @@ export function StockDialog({ product, action }: { product: P; action: FormActio
           <p className="text-muted">
             Stock actuel : <strong className="text-ink">{product.stock}</strong>
           </p>
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-plum-50 p-1">
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-sage-50 p-1">
             {(["add", "remove"] as const).map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => setDirection(d)}
-                className={cn("rounded-lg py-2 text-sm font-semibold", direction === d ? "bg-plum-900 text-white" : "text-muted")}
+                className={cn("rounded-lg py-2 text-sm font-semibold", direction === d ? "bg-sage-900 text-white" : "text-muted")}
               >
                 {d === "add" ? "Ajouter du stock" : "Retirer du stock"}
               </button>

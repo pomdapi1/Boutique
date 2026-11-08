@@ -74,8 +74,8 @@ export default async function SalesPage({ searchParams }: { searchParams: SP }) 
         <StatCard label="Articles vendus" value={b.quantity} />
       </div>
 
-      <div className="mb-8 flex flex-col gap-4 rounded-2xl bg-coral-50 p-5 sm:flex-row sm:items-center">
-        <span className="grid h-12 w-12 place-items-center rounded-full bg-coral-100 text-coral-500">
+      <div className="mb-8 flex flex-col gap-4 rounded-2xl bg-sage-50 p-5 sm:flex-row sm:items-center">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-sage-200 text-sage-600">
           <BarChart3 size={22} />
         </span>
         <div className="flex-1">

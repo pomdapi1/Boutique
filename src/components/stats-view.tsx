@@ -18,7 +18,7 @@ function TopList({ title, rows, format }: { title: string; rows: { label: string
         {rows.map((r, i) => (
           <li key={r.label} className="relative flex items-center gap-3 px-4 py-2.5">
             <span
-              className={cn("absolute inset-y-0 left-0 rounded-lg", i === 0 ? "bg-coral-100" : "bg-plum-100/70")}
+              className={cn("absolute inset-y-0 left-0 rounded-lg", i === 0 ? "bg-sage-200" : "bg-sage-100/70")}
               style={{ width: `${Math.max(8, (r.value / max) * 100)}%` }}
             />
             <span className="relative w-4 text-sm text-muted">{i + 1}</span>
@@ -33,7 +33,8 @@ function TopList({ title, rows, format }: { title: string; rows: { label: string
 
 function PaymentSplit({ payments }: { payments: StatsResult["payments"] }) {
   const total = payments.reduce((a, p) => a + p.cents, 0);
-  const colors = ["#3a0b24", "#c7b8c0", "#f25f5c"];
+  // Couleur fixe par mode de paiement (validée daltonisme ; segments séparés et étiquetés)
+  const colors: Record<string, string> = { CARD: "#58731f", CASH: "#c8743a", OTHER: "#4f86c6" };
   return (
     <div className="card p-6">
       <h3 className="mb-5 text-lg font-semibold">Ventes par mode de paiement</h3>
@@ -43,13 +44,13 @@ function PaymentSplit({ payments }: { payments: StatsResult["payments"] }) {
         <>
           <div className="flex h-3.5 gap-0.5 overflow-hidden rounded-full" role="img" aria-label="Répartition par mode de paiement">
             {payments.map((p, i) => (
-              <span key={p.type} style={{ width: `${(p.cents / total) * 100}%`, background: colors[i] }} />
+              <span key={p.type} style={{ width: `${(p.cents / total) * 100}%`, background: colors[p.type] ?? "#4f86c6" }} />
             ))}
           </div>
           <ul className="mt-4 space-y-2">
             {payments.map((p, i) => (
               <li key={p.type} className="flex items-center gap-3">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: colors[i] }} />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: colors[p.type] ?? "#4f86c6" }} />
                 <span className="flex-1">{PAYMENT_LABEL[p.type] ?? p.type}</span>
                 <span className="font-semibold">{eurosFr(p.cents)}</span>
                 <span className="w-14 text-right text-sm text-muted">{((p.cents / total) * 100).toFixed(1).replace(".", ",")} %</span>
@@ -81,12 +82,12 @@ export function StatsView({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-6 rounded-2xl bg-coral-50 p-7 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-6 rounded-2xl bg-sage-50 p-7 sm:flex-row sm:items-center">
         <div>
           <div className="eyebrow">
             {mode === "mine" ? "Net à reverser" : "CA de la boutique"} · {monthLabel(month)}
           </div>
-          <div className="mt-2 text-5xl font-bold text-coral-500 sm:text-6xl">{eurosFr(heroValue)}</div>
+          <div className="mt-2 text-5xl font-bold text-sage-600 sm:text-6xl">{eurosFr(heroValue)}</div>
           {mode === "mine" ? (
             <p className="mt-2 text-sm text-muted">
               {eurosFr(c.grossCents)} de ventes − {eurosFr(c.feeCents)} de commission SumUp − {eurosFr(c.commissionCents)} de commission Boutique
@@ -138,7 +139,7 @@ export function StatsView({
         <PaymentSplit payments={stats.payments} />
         {mode === "mine" && outOfStock !== undefined && (
           <div className="card flex gap-4 self-start p-6">
-            <PackageX className="text-coral-500" size={26} />
+            <PackageX className="text-danger-500" size={26} />
             <div>
               <div className="text-lg font-semibold">À réassortir</div>
               <p className="mt-1 text-muted">

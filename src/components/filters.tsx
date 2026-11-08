@@ -18,7 +18,7 @@ function useSetParam() {
 }
 
 const selectCls =
-  "h-12 rounded-xl border border-line bg-white px-4 pr-10 text-sm outline-none focus:ring-2 focus:ring-plum-100";
+  "h-12 rounded-xl border border-line bg-white px-4 pr-10 text-sm outline-none focus:ring-2 focus:ring-sage-100";
 
 export function MonthNav({ month }: { month: string }) {
   const setParam = useSetParam();

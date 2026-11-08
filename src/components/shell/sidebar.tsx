@@ -67,9 +67,9 @@ export function Sidebar({
   }, []);
 
   const content = (
-    <div className="flex h-full flex-col bg-plum-900 text-white">
+    <div className="flex h-full flex-col bg-sage-900 text-white">
       <div className="flex h-24 items-center justify-between px-6">
-        {!collapsed && <span className="logo text-[2.6rem]">BOUTIQUE</span>}
+        {!collapsed && <span className="logo text-[2.6rem] text-sage-300">BOUTIQUE</span>}
         <button
           className="hidden text-white/50 hover:text-white lg:block"
           onClick={() => setCollapsed((c) => !c)}
@@ -93,14 +93,14 @@ export function Sidebar({
               title={item.label}
               className={cn(
                 "relative flex items-center gap-4 rounded-lg px-3 py-2.5 text-[1.05rem] transition",
-                active ? "bg-plum-700/80 font-semibold" : "text-white/85 hover:bg-plum-800",
+                active ? "bg-sage-700/80 font-semibold" : "text-white/85 hover:bg-sage-800",
               )}
             >
-              {active && <span className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded bg-coral-500" />}
+              {active && <span className="absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded bg-sage-300" />}
               <Icon size={20} strokeWidth={1.75} />
               {!collapsed && <span className="flex-1">{item.label}</span>}
               {!collapsed && item.badge ? (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-coral-500 px-1.5 text-xs font-semibold">
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-sage-200 px-1.5 text-xs font-semibold text-sage-900">
                   {item.badge}
                 </span>
               ) : null}
@@ -124,10 +124,10 @@ export function Sidebar({
           </div>
         )}
         <button
-          className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-plum-800"
+          className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-sage-800"
           onClick={() => setMenuOpen((o) => !o)}
         >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-plum-700 text-sm font-semibold">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-sage-700 text-sm font-semibold">
             {initials(displayName)}
           </span>
           {!collapsed && (
@@ -147,7 +147,7 @@ export function Sidebar({
   return (
     <>
       <button
-        className="fixed top-6 left-4 z-30 rounded-lg bg-plum-900 p-2 text-white lg:hidden"
+        className="fixed top-6 left-4 z-30 rounded-lg bg-sage-900 p-2 text-white lg:hidden"
         onClick={() => setMobileOpen(true)}
         aria-label="Ouvrir le menu"
       >

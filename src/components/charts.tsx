@@ -18,8 +18,8 @@ import { eurosFr } from "@/lib/money";
 
 type Point = { month: string; grossCents: number };
 
-const PLUM_BAR = "#e7dfe3";
-const CORAL = "#f25f5c";
+const BAR = "#d2d6c5"; // sage-200
+const ACCENT = "#626850"; // sage-600
 
 function TooltipBox({ active, payload }: { active?: boolean; payload?: { payload: Point }[] }) {
   if (!active || !payload?.length) return null;
@@ -51,30 +51,30 @@ export function MonthlyRevenueChart({
         <BarChart data={data} margin={{ top: 28, right: 8, left: 8, bottom: 0 }} barCategoryGap="30%">
           <defs>
             <pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-              <rect width="7" height="7" fill={CORAL} />
-              <rect width="3" height="7" fill="#f78a87" />
+              <rect width="7" height="7" fill={ACCENT} />
+              <rect width="3" height="7" fill="#959b80" />
             </pattern>
           </defs>
           <XAxis
             dataKey="month"
             tickFormatter={monthShortLabel}
-            axisLine={{ stroke: "#ebe8e3" }}
+            axisLine={{ stroke: "#e8e7df" }}
             tickLine={false}
-            tick={{ fill: "#6f6866", fontSize: 13 }}
+            tick={{ fill: "#66695e", fontSize: 13 }}
           />
           <YAxis hide domain={[0, max * 1.12]} />
-          <Tooltip content={<TooltipBox />} cursor={{ fill: "rgba(58,11,36,0.04)" }} />
+          <Tooltip content={<TooltipBox />} cursor={{ fill: "rgba(47,50,39,0.05)" }} />
           {average > 0 && (
             <ReferenceLine
               y={average}
-              stroke="#b9a7b0"
+              stroke="#959b80"
               strokeDasharray="5 5"
-              label={{ value: `${averageLabel} ${eurosFr(average, 0)}`, position: "insideTopLeft", fill: "#6f6866", fontSize: 12 }}
+              label={{ value: `${averageLabel} ${eurosFr(average, 0)}`, position: "insideTopLeft", fill: "#66695e", fontSize: 12 }}
             />
           )}
           <Bar dataKey="grossCents" radius={[4, 4, 0, 0]} maxBarSize={44}>
             {data.map((d) => (
-              <Cell key={d.month} fill={d.month === currentMonth ? "url(#hatch)" : PLUM_BAR} />
+              <Cell key={d.month} fill={d.month === currentMonth ? "url(#hatch)" : BAR} />
             ))}
             <LabelList
               dataKey="grossCents"
@@ -90,7 +90,7 @@ export function MonthlyRevenueChart({
                     textAnchor="middle"
                     fontSize={13}
                     fontWeight={d.month === currentMonth ? 600 : 400}
-                    fill={d.month === currentMonth ? "#3a0b24" : "#6f6866"}
+                    fill={d.month === currentMonth ? "#2f3227" : "#66695e"}
                   >
                     {eurosFr(value, 0)}
                   </text>
@@ -115,11 +115,11 @@ export function Sparkline({ values }: { values: number[] }) {
           <Line
             type="linear"
             dataKey="v"
-            stroke={CORAL}
+            stroke={ACCENT}
             strokeWidth={2}
             isAnimationActive={false}
             dot={(p: { cx?: number; cy?: number; index?: number }) =>
-              p.index === data.length - 1 ? <circle key="last" cx={p.cx} cy={p.cy} r={4} fill={CORAL} stroke="#fbefee" strokeWidth={2} /> : <g key={p.index} />
+              p.index === data.length - 1 ? <circle key="last" cx={p.cx} cy={p.cy} r={4} fill={ACCENT} stroke="#f4f5f0" strokeWidth={2} /> : <g key={p.index} />
             }
           />
         </LineChart>
