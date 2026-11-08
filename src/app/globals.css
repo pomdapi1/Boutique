@@ -27,7 +27,7 @@
   --color-card-blue: #2d5bd7;
 
   --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
-  --font-logo: var(--font-anton), "Impact", sans-serif;
+  --font-brand: var(--font-brand-serif), "Cormorant Garamond", Garamond, Georgia, serif;
 }
 
 html,
@@ -39,18 +39,6 @@ body {
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-}
-
-/* En couche "components" pour qu'une classe text-* puisse changer la couleur (ex. sur fond sombre). */
-@layer components {
-  .logo {
-    font-family: var(--font-logo);
-    color: var(--color-sage-600);
-    letter-spacing: 0.01em;
-    transform: skewX(-8deg);
-    display: inline-block;
-    line-height: 1;
-  }
 }
 
 .btn {

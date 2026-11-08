@@ -138,7 +138,7 @@ export async function requestProductChangeAction(_p: ActionState, fd: FormData):
     link: "/admin/products",
   });
   revalidatePath("/creator/products");
-  return { ok: true, message: "Demande envoyée : elle sera appliquée après validation par Boutique." };
+  return { ok: true, message: "Demande envoyée : elle sera appliquée après validation par Les Songes Créatifs." };
 }
 
 export async function uploadDocumentAction(_p: ActionState, fd: FormData): Promise<ActionState> {

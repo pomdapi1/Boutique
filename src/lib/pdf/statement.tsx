@@ -6,7 +6,8 @@ import type { Breakdown } from "../money";
 
 const s = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1f2420" },
-  brand: { fontSize: 22, color: "#626850", fontFamily: "Helvetica-Bold", marginBottom: 4 },
+  brand: { fontSize: 22, color: "#2f3227", fontFamily: "Times-Roman" },
+  tagline: { fontSize: 7, color: "#626850", letterSpacing: 2, marginTop: 2, marginBottom: 12 },
   title: { fontSize: 14, fontFamily: "Helvetica-Bold", marginBottom: 2 },
   muted: { color: "#66695e" },
   summary: { flexDirection: "row", marginTop: 18, marginBottom: 18, borderWidth: 1, borderColor: "#e8e7df", borderRadius: 6 },
@@ -42,7 +43,8 @@ export function renderStatement(data: {
   const doc = (
     <Document title={`Relevé ${data.creatorName} ${data.month}`}>
       <Page size="A4" style={s.page}>
-        <Text style={s.brand}>BOUTIQUE</Text>
+        <Text style={s.brand}>Les Songes Créatifs</Text>
+        <Text style={s.tagline}>BOUTIQUE DE CRÉATEURS</Text>
         <Text style={s.title}>Relevé de ventes — {monthLabel(data.month)}</Text>
         <Text style={s.muted}>
           {data.creatorName} · édité le {dateLabel(new Date())}
@@ -86,7 +88,7 @@ export function renderStatement(data: {
         <Text
           style={s.footer}
           fixed
-          render={({ pageNumber, totalPages }) => `Boutique — relevé ${data.creatorName} — page ${pageNumber}/${totalPages}`}
+          render={({ pageNumber, totalPages }) => `Les Songes Créatifs — relevé ${data.creatorName} — page ${pageNumber}/${totalPages}`}
         />
       </Page>
     </Document>

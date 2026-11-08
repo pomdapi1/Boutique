@@ -90,7 +90,7 @@ export function StatsView({
           <div className="mt-2 text-5xl font-bold text-sage-600 sm:text-6xl">{eurosFr(heroValue)}</div>
           {mode === "mine" ? (
             <p className="mt-2 text-sm text-muted">
-              {eurosFr(c.grossCents)} de ventes − {eurosFr(c.feeCents)} de commission SumUp − {eurosFr(c.commissionCents)} de commission Boutique
+              {eurosFr(c.grossCents)} de ventes − {eurosFr(c.feeCents)} de commission SumUp − {eurosFr(c.commissionCents)} de commission Les Songes Créatifs
             </p>
           ) : (
             <p className="mt-2 text-sm text-muted">

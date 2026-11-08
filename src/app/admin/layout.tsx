@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   return (
     <AppShell
       user={user}
-      displayName="Boutique"
+      displayName="Les Songes Créatifs"
       roleLabel="Administrateur"
       nav={[
         { href: "/admin", label: "Tableau de bord", icon: "dashboard" },

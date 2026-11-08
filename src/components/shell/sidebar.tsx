@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
+import { BrandLogo } from "../brand-logo";
 
 const ICONS = {
   shop: ShoppingBag,
@@ -69,7 +70,7 @@ export function Sidebar({
   const content = (
     <div className="flex h-full flex-col bg-sage-900 text-white">
       <div className="flex h-24 items-center justify-between px-6">
-        {!collapsed && <span className="logo text-[2.6rem] text-sage-300">BOUTIQUE</span>}
+        {!collapsed && <BrandLogo tone="dark" />}
         <button
           className="hidden text-white/50 hover:text-white lg:block"
           onClick={() => setCollapsed((c) => !c)}

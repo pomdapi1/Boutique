@@ -1,6 +1,7 @@
 import { LoginForm } from "./login-form";
+import { BrandLogo } from "@/components/brand-logo";
 
-export const metadata = { title: "Connexion — Boutique" };
+export const metadata = { title: "Connexion — Les Songes Créatifs" };
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-[0_2px_12px_rgba(0,0,0,0.05)]">
         <div className="text-center">
-          <span className="logo text-4xl">BOUTIQUE</span>
+          <BrandLogo size="lg" />
           <p className="mt-6 text-muted">Connectez-vous à votre espace</p>
         </div>
         <LoginForm />

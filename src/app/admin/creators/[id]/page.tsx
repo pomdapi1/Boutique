@@ -52,7 +52,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
               <input name="email" type="email" defaultValue={creator.user?.email ?? creator.contactEmail ?? ""} required className="input" />
             </div>
             <div>
-              <label className="label">Commission Boutique (%)</label>
+              <label className="label">Commission Les Songes Créatifs (%)</label>
               <input
                 name="commission"
                 type="number"

@@ -1,4 +1,4 @@
-# Boutique — espace créateurs & administration
+# Les Songes Créatifs — espace créateurs & administration
 
 Application de gestion de la boutique dépôt-vente : feed des ventes en temps réel, ventes et stocks par créateur, statistiques, documents, reversements mensuels, synchronisation avec la caisse **SumUp**.
 
@@ -14,7 +14,7 @@ Application de gestion de la boutique dépôt-vente : feed des ventes en temps r
 | Attribution | Chaque ligne de vente SumUp est rattachée à un produit via son nom : `012 - Pot de fleurs (petit) - Le jardin du crochet` (ou le « nom dans la caisse SumUp » défini par l'admin). Les lignes non reconnues apparaissent dans **Admin › Ventes › Non attribuées**. |
 | Stock | Géré dans l'application : décrémenté à chaque vente importée, ré-incrémenté en cas de remboursement. Les créateurs ajoutent / retirent du stock eux-mêmes. |
 | Commission | Taux par créateur (30 % par défaut), **sur le CA brut**, figé au moment de la vente. |
-| Net à reverser | CA brut − frais SumUp (réels, `fee_amount`, répartis au prorata des lignes) − commission Boutique. |
+| Net à reverser | CA brut − frais SumUp (réels, `fee_amount`, répartis au prorata des lignes) − commission Les Songes Créatifs. |
 | Validation | Nouveau produit → « En attente » jusqu'à validation admin. Modification d'un produit actif → demande soumise à l'admin. |
 | Clôture | L'admin clôture un mois (montants figés + notification aux créateurs), puis marque chaque reversement payé. |
 

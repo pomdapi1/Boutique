@@ -65,7 +65,7 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   await page.goto("/creator/products");
   await expect(page.getByRole("row", { name: new RegExp(name) })).toContainText("Actif");
   await page.getByRole("button", { name: "Notifications" }).click();
-  await expect(page.getByText("Produit validé par Boutique").first()).toBeVisible();
+  await expect(page.getByText("Produit validé par Les Songes Créatifs").first()).toBeVisible();
 });
 
 test("un créateur n'accède pas à l'admin", async ({ page }) => {
