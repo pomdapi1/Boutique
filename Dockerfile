@@ -20,7 +20,7 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOSTNAME=0.0.0.0 \
     TZ=Europe/Paris \
-    DATABASE_URL=file:/app/data/conserve.db \
+    DATABASE_URL=file:/app/data/boutique.db \
     UPLOAD_DIR=/app/data/uploads
 
 RUN groupadd --system app && useradd --system --gid app --home /app app

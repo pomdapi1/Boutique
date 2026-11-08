@@ -1,6 +1,6 @@
-# Conserve — espace créateurs & administration
+# Boutique — espace créateurs & administration
 
-Application de gestion de la boutique dépôt-vente **Conserve** : feed des ventes en temps réel, ventes et stocks par créateur, statistiques, documents, reversements mensuels, synchronisation avec la caisse **SumUp**.
+Application de gestion de la boutique dépôt-vente : feed des ventes en temps réel, ventes et stocks par créateur, statistiques, documents, reversements mensuels, synchronisation avec la caisse **SumUp**.
 
 - **Stack** : Next.js 15 (App Router, TypeScript) · Tailwind CSS 4 · Prisma + SQLite · sessions JWT signées (jose + bcrypt) · Recharts · @react-pdf/renderer
 - **Maquettes** : [docs/maquettes/](docs/maquettes/)
@@ -14,7 +14,7 @@ Application de gestion de la boutique dépôt-vente **Conserve** : feed des vent
 | Attribution | Chaque ligne de vente SumUp est rattachée à un produit via son nom : `012 - Pot de fleurs (petit) - Le jardin du crochet` (ou le « nom dans la caisse SumUp » défini par l'admin). Les lignes non reconnues apparaissent dans **Admin › Ventes › Non attribuées**. |
 | Stock | Géré dans l'application : décrémenté à chaque vente importée, ré-incrémenté en cas de remboursement. Les créateurs ajoutent / retirent du stock eux-mêmes. |
 | Commission | Taux par créateur (30 % par défaut), **sur le CA brut**, figé au moment de la vente. |
-| Net à reverser | CA brut − frais SumUp (réels, `fee_amount`, répartis au prorata des lignes) − commission Conserve. |
+| Net à reverser | CA brut − frais SumUp (réels, `fee_amount`, répartis au prorata des lignes) − commission Boutique. |
 | Validation | Nouveau produit → « En attente » jusqu'à validation admin. Modification d'un produit actif → demande soumise à l'admin. |
 | Clôture | L'admin clôture un mois (montants figés + notification aux créateurs), puis marque chaque reversement payé. |
 
@@ -27,7 +27,7 @@ npm install
 copy .env.example .env
 # Éditez .env : remplacez AUTH_SECRET par une longue chaîne aléatoire, par ex. :
 #   [Convert]::ToBase64String((1..48 | % { Get-Random -Max 256 }))
-npx prisma migrate dev      # crée data/conserve.db puis lance le seed de démo
+npx prisma migrate dev      # crée data/boutique.db puis lance le seed de démo
 npm run dev                 # http://localhost:3000
 ```
 
@@ -37,9 +37,9 @@ npm run dev                 # http://localhost:3000
 
 | Rôle | Email | Mot de passe |
 |---|---|---|
-| Administrateur | `admin@conserve.test` | `admin123` |
-| Créateur « Le jardin du crochet » | `crochet@conserve.test` | `demo123` |
-| Autres créateurs | `naime@`, `sarradeuxairs@`, `baldck@`, `acre@`… `conserve.test` | `demo123` |
+| Administrateur | `admin@boutique.test` | `admin123` |
+| Créateur « Le jardin du crochet » | `crochet@boutique.test` | `demo123` |
+| Autres créateurs | `naime@`, `sarradeuxairs@`, `baldck@`, `acre@`… `boutique.test` | `demo123` |
 
 ### Scénarios à vérifier
 

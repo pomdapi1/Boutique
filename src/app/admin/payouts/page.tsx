@@ -32,7 +32,7 @@ export default async function PayoutsPage({ searchParams }: { searchParams: SP }
     <div className="mx-auto max-w-6xl">
       <PageHeader
         title="Reversements"
-        subtitle="Net à reverser = CA brut − frais SumUp − commission Conserve (sur le CA brut)."
+        subtitle="Net à reverser = CA brut − frais SumUp − commission Boutique (sur le CA brut)."
         actions={
           unclosed > 0 && !ongoing ? (
             <form action={closeMonthAction}>

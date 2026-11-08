@@ -70,7 +70,7 @@ export default async function SettingsPage() {
           <h2 className="mb-4 text-lg font-semibold">Commissions & frais</h2>
           <ActionForm action={updateSettingsAction} className="space-y-4">
             <div>
-              <label className="label">Commission Conserve par défaut (%)</label>
+              <label className="label">Commission Boutique par défaut (%)</label>
               <input name="defaultCommission" type="number" step="0.5" min={0} max={100} defaultValue={Math.round(defaultRate * 1000) / 10} className="input" />
               <p className="mt-1 text-xs text-muted">Appliquée aux nouveaux créateurs. Chaque créateur peut avoir son propre taux.</p>
             </div>

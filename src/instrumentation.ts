@@ -5,9 +5,9 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  const g = globalThis as unknown as { __conserveScheduler?: boolean };
-  if (g.__conserveScheduler) return;
-  g.__conserveScheduler = true;
+  const g = globalThis as unknown as { __boutiqueScheduler?: boolean };
+  if (g.__boutiqueScheduler) return;
+  g.__boutiqueScheduler = true;
 
   const { ensureAdmin } = await import("./lib/bootstrap");
   await ensureAdmin().catch((e) => console.error("[bootstrap]", e));

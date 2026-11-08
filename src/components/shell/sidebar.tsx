@@ -69,7 +69,7 @@ export function Sidebar({
   const content = (
     <div className="flex h-full flex-col bg-plum-900 text-white">
       <div className="flex h-24 items-center justify-between px-6">
-        {!collapsed && <span className="logo text-[2.6rem]">CONSERVE</span>}
+        {!collapsed && <span className="logo text-[2.6rem]">BOUTIQUE</span>}
         <button
           className="hidden text-white/50 hover:text-white lg:block"
           onClick={() => setCollapsed((c) => !c)}

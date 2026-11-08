@@ -1,7 +1,7 @@
 /**
  * Données de démonstration : `npm run seed` (efface et recrée la base locale).
- * Comptes : admin@conserve.test / admin123 — crochet@conserve.test / demo123
- *           (et <créateur>@conserve.test / demo123 pour les autres).
+ * Comptes : admin@boutique.test / admin123 — crochet@boutique.test / demo123
+ *           (et <créateur>@boutique.test / demo123 pour les autres).
  */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -84,15 +84,15 @@ async function main() {
 
   const adminHash = await bcrypt.hash("admin123", 10);
   const demoHash = await bcrypt.hash("demo123", 10);
-  await prisma.user.create({ data: { email: "admin@conserve.test", passwordHash: adminHash, role: "ADMIN" } });
+  await prisma.user.create({ data: { email: "admin@boutique.test", passwordHash: adminHash, role: "ADMIN" } });
 
   console.log("Créateurs et produits…");
   const crochet = await prisma.creator.create({
     data: {
       name: "Le jardin du crochet",
-      contactEmail: "crochet@conserve.test",
+      contactEmail: "crochet@boutique.test",
       commissionRate: 0.3,
-      user: { create: { email: "crochet@conserve.test", passwordHash: demoHash, role: "CREATOR" } },
+      user: { create: { email: "crochet@boutique.test", passwordHash: demoHash, role: "CREATOR" } },
     },
   });
   for (const [code, name, price, stock] of CROCHET) {
@@ -103,9 +103,9 @@ async function main() {
     const creator = await prisma.creator.create({
       data: {
         name: c.name,
-        contactEmail: `${c.slug}@conserve.test`,
+        contactEmail: `${c.slug}@boutique.test`,
         commissionRate: i % 4 === 0 ? 0.25 : 0.3,
-        user: { create: { email: `${c.slug}@conserve.test`, passwordHash: demoHash, role: "CREATOR" } },
+        user: { create: { email: `${c.slug}@boutique.test`, passwordHash: demoHash, role: "CREATOR" } },
       },
     });
     for (const [j, [name, price]] of c.products.entries()) {

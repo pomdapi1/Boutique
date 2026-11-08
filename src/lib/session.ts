@@ -1,7 +1,7 @@
 // Compatible runtime Edge (utilisé par le middleware) : aucune dépendance Node.
 import { SignJWT, jwtVerify } from "jose";
 
-export const SESSION_COOKIE = "conserve_session";
+export const SESSION_COOKIE = "boutique_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30; // 30 jours
 
 export type SessionPayload = {

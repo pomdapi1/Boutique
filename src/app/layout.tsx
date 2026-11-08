@@ -5,8 +5,8 @@ import "./globals.css";
 const anton = Anton({ weight: "400", subsets: ["latin"], variable: "--font-anton" });
 
 export const metadata: Metadata = {
-  title: "Conserve — Espace admin & créateurs",
-  description: "Gestion de la boutique Conserve : ventes, stocks, documents.",
+  title: "Boutique — Espace admin & créateurs",
+  description: "Gestion de la boutique : ventes, stocks, documents.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,4 @@
-// Conserve — modèle de données
+// Boutique — modèle de données
 // Montants stockés en centimes (Int) pour éviter les erreurs d'arrondi.
 // Les "enums" sont des String (compatibilité SQLite) ; valeurs listées en commentaire
 // et centralisées dans src/lib/constants.ts.
@@ -29,7 +29,7 @@ model Creator {
   id             String   @id @default(cuid())
   name           String   @unique
   contactEmail   String?
-  // Commission Conserve, sur le CA brut (0.30 = 30 %)
+  // Commission Boutique, sur le CA brut (0.30 = 30 %)
   commissionRate Float    @default(0.3)
   active         Boolean  @default(true)
   createdAt      DateTime @default(now())

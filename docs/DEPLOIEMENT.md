@@ -5,7 +5,7 @@ Chaque push sur `main` déclenche automatiquement un nouveau déploiement. La CI
 ## 1. Serveur
 
 - VPS Linux en Europe, 2 vCPU / 4 Go RAM suffisent (Hetzner CX22, OVH VPS, Scaleway…).
-- Un nom de domaine pointant vers l'IP du serveur, ex. `app.conserve-boutique.fr` (enregistrement DNS **A**).
+- Un nom de domaine pointant vers l'IP du serveur, ex. `app.votre-domaine.fr` (enregistrement DNS **A**).
 - Installer Coolify (en root) :
   ```bash
   curl -fsSL https://cdn.coollabs.io/coolify/install.sh | bash
@@ -25,13 +25,13 @@ Coolify › *Projects* › *New resource* › **Private repository (GitHub App)*
 | Branche | `main` |
 | Build pack | **Dockerfile** |
 | Port exposé | `3000` |
-| Domaine | `https://app.conserve-boutique.fr` (certificat HTTPS automatique) |
+| Domaine | `https://app.votre-domaine.fr` (certificat HTTPS automatique) |
 | Auto deploy | activé |
 
 ### Stockage persistant (indispensable)
 
 *Storages* › **Add volume** : chemin de destination `/app/data`.
-La base SQLite (`/app/data/conserve.db`) et les documents des créateurs (`/app/data/uploads`) y sont conservés entre deux déploiements.
+La base SQLite (`/app/data/boutique.db`) et les documents des créateurs (`/app/data/uploads`) y sont conservés entre deux déploiements.
 
 ### Variables d'environnement
 
@@ -40,6 +40,7 @@ La base SQLite (`/app/data/conserve.db`) et les documents des créateurs (`/app/
 | `AUTH_SECRET` | chaîne aléatoire ≥ 32 caractères (`openssl rand -base64 48`) |
 | `ADMIN_EMAIL` | email du premier compte admin |
 | `ADMIN_PASSWORD` | mot de passe initial (≥ 10 caractères) — créé au 1er démarrage, à retirer ensuite |
+| `CONTACT_EMAIL` | email affiché sur la page de connexion (« mot de passe oublié ») |
 | `SUMUP_MODE` | `live` |
 | `SUMUP_API_KEY` | clé secrète SumUp `sk_…` (cocher *secret*) |
 | `SUMUP_MERCHANT_CODE` | code marchand SumUp |
@@ -57,7 +58,7 @@ Connectez-vous, puis : *Paramètres & SumUp* › **Tester la connexion** → cr�
 
 Coolify › *Scheduled tasks* sur l'application, par ex. chaque nuit :
 ```bash
-sqlite3 /app/data/conserve.db ".backup '/app/data/backup-$(date +%F).db'"
+sqlite3 /app/data/boutique.db ".backup '/app/data/backup-$(date +%F).db'"
 ```
 et/ou une sauvegarde du volume `/app/data` vers un stockage S3 externe (Coolify › *S3 storages*). Pensez à garder une copie hors du serveur.
 

@@ -121,7 +121,7 @@ export function EditProductDialog({ product, action, pending }: { product: P; ac
             </p>
           )}
           <ProductFields product={product} />
-          <p className="text-sm text-muted">Les modifications d&apos;un produit actif sont soumises à validation par Conserve.</p>
+          <p className="text-sm text-muted">Les modifications d&apos;un produit actif sont soumises à validation par Boutique.</p>
           <SubmitButton className="w-full">Envoyer</SubmitButton>
         </ActionForm>
       )}

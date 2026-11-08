@@ -14,7 +14,7 @@ const base: SumUpTransactionDetail = {
   products: [
     { name: "007 - moyen bruts - Mr Prout", price: 35, quantity: 1, total_price: 35 },
     { name: "012 - Pot de fleurs (petit) - Le jardin du crochet", price: 20, quantity: 1, total_price: 20, total_with_vat: 20 },
-    { name: "003 - Moyen sac - Conserve", price: 0.1, quantity: 2, total_price: 0.2 },
+    { name: "003 - Moyen sac - Boutique", price: 0.1, quantity: 2, total_price: 0.2 },
   ],
 };
 
@@ -27,7 +27,7 @@ describe("normalizeSumUpTransaction", () => {
     expect(t.lines).toEqual([
       { name: "007 - moyen bruts - Mr Prout", quantity: 1, totalCents: 3500, unitPriceCents: 3500 },
       { name: "012 - Pot de fleurs (petit) - Le jardin du crochet", quantity: 1, totalCents: 2000, unitPriceCents: 2000 },
-      { name: "003 - Moyen sac - Conserve", quantity: 2, totalCents: 20, unitPriceCents: 10 },
+      { name: "003 - Moyen sac - Boutique", quantity: 2, totalCents: 20, unitPriceCents: 10 },
     ]);
   });
 

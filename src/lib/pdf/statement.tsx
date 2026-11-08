@@ -42,7 +42,7 @@ export function renderStatement(data: {
   const doc = (
     <Document title={`Relevé ${data.creatorName} ${data.month}`}>
       <Page size="A4" style={s.page}>
-        <Text style={s.brand}>CONSERVE</Text>
+        <Text style={s.brand}>BOUTIQUE</Text>
         <Text style={s.title}>Relevé de ventes — {monthLabel(data.month)}</Text>
         <Text style={s.muted}>
           {data.creatorName} · édité le {dateLabel(new Date())}
@@ -86,7 +86,7 @@ export function renderStatement(data: {
         <Text
           style={s.footer}
           fixed
-          render={({ pageNumber, totalPages }) => `Conserve — relevé ${data.creatorName} — page ${pageNumber}/${totalPages}`}
+          render={({ pageNumber, totalPages }) => `Boutique — relevé ${data.creatorName} — page ${pageNumber}/${totalPages}`}
         />
       </Page>
     </Document>

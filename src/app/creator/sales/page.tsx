@@ -69,7 +69,7 @@ export default async function SalesPage({ searchParams }: { searchParams: SP }) 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard label="CA brut" value={euros(b.grossCents)} />
         <StatCard label="Frais SumUp" value={euros(b.feeCents)} />
-        <StatCard label={`Commission Conserve (${Math.round(creator.commissionRate * 100)} %)`} value={euros(b.commissionCents)} />
+        <StatCard label={`Commission Boutique (${Math.round(creator.commissionRate * 100)} %)`} value={euros(b.commissionCents)} />
         <StatCard label="CA net à reverser" value={euros(b.netCents)} accent />
         <StatCard label="Articles vendus" value={b.quantity} />
       </div>

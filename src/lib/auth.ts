@@ -33,7 +33,7 @@ export async function authenticate(email: string, password: string) {
     include: { creator: true },
   });
   // Comparaison effectuée même si l'utilisateur n'existe pas (temps constant).
-  dummyHash ??= await bcrypt.hash("conserve-dummy", 10);
+  dummyHash ??= await bcrypt.hash("boutique-dummy", 10);
   const ok = await bcrypt.compare(password, user?.passwordHash ?? dummyHash);
   if (!user || !ok) return null;
   if (user.creator && !user.creator.active) return null;

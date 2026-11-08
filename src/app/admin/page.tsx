@@ -40,12 +40,12 @@ export default async function AdminDashboard() {
   return (
     <div className="mx-auto max-w-6xl">
       <AutoRefresh seconds={30} />
-      <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de la boutique Conserve." actions={<GlobalRevenueButton />} />
+      <PageHeader title="Tableau de bord" subtitle="Vue d'ensemble de la boutique." actions={<GlobalRevenueButton />} />
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="CA du jour" value={euros(day.cents)} hint={<span className="text-sm text-muted">{day.count} vente(s)</span>} />
         <StatCard label="CA du mois" value={euros(month.cents)} hint={<span className="text-sm text-muted">{month.count} vente(s)</span>} />
-        <StatCard label="Commission Conserve (mois)" value={euros(commission)} accent />
+        <StatCard label="Commission Boutique (mois)" value={euros(commission)} accent />
         <StatCard label="Net à reverser (mois)" value={euros(toPay)} />
       </div>
 

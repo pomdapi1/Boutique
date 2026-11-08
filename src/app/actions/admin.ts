@@ -106,7 +106,7 @@ export async function approveProductAction(fd: FormData) {
   });
   await notifyCreator(product.creatorId, {
     kind: "REQUEST",
-    title: "Produit validé par Conserve",
+    title: "Produit validé par Boutique",
     body: productLabel(product),
     link: "/creator/products",
   });
@@ -142,7 +142,7 @@ export async function decideRequestAction(fd: FormData) {
   ]);
   await notifyCreator(req.creatorId, {
     kind: "REQUEST",
-    title: approve ? "Modification validée par Conserve" : "Modification refusée",
+    title: approve ? "Modification validée par Boutique" : "Modification refusée",
     body: `Modification · ${productLabel(req.product)}`,
     link: "/creator/products",
   });

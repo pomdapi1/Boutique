@@ -57,7 +57,7 @@ export default async function CreatorsPage() {
                 <input name="password" type="text" minLength={8} required className="input" />
               </div>
               <div>
-                <label className="label">Commission Conserve (%)</label>
+                <label className="label">Commission Boutique (%)</label>
                 <input name="commission" type="number" step="0.5" min={0} max={100} placeholder={String(Math.round(defaultRate * 100))} className="input" />
               </div>
               <SubmitButton className="w-full">Créer le compte</SubmitButton>

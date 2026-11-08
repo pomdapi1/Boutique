@@ -20,12 +20,12 @@ async function logout(page: Page) {
 }
 
 test("mauvais mot de passe refusé", async ({ page }) => {
-  await login(page, "crochet@conserve.test", "mauvais");
+  await login(page, "crochet@boutique.test", "mauvais");
   await expect(page.getByText("Identifiants incorrects.")).toBeVisible();
 });
 
 test("créateur : feed, stock et nouveau produit ; admin : validation", async ({ page }) => {
-  await loginOk(page, "crochet@conserve.test", "demo123");
+  await loginOk(page, "crochet@boutique.test", "demo123");
   await expect(page.getByRole("heading", { name: "La boutique" })).toBeVisible();
 
   // Ajout de stock sur le premier produit
@@ -52,7 +52,7 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
 
   // Déconnexion → admin valide
   await logout(page);
-  await loginOk(page, "admin@conserve.test", "admin123");
+  await loginOk(page, "admin@boutique.test", "admin123");
   await expect(page.getByRole("heading", { name: "Tableau de bord" })).toBeVisible();
   await page.goto("/admin/products");
   const item = page.getByRole("listitem").filter({ hasText: name });
@@ -61,15 +61,15 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
 
   // Retour créateur : produit actif + notification
   await logout(page);
-  await loginOk(page, "crochet@conserve.test", "demo123");
+  await loginOk(page, "crochet@boutique.test", "demo123");
   await page.goto("/creator/products");
   await expect(page.getByRole("row", { name: new RegExp(name) })).toContainText("Actif");
   await page.getByRole("button", { name: "Notifications" }).click();
-  await expect(page.getByText("Produit validé par Conserve").first()).toBeVisible();
+  await expect(page.getByText("Produit validé par Boutique").first()).toBeVisible();
 });
 
 test("un créateur n'accède pas à l'admin", async ({ page }) => {
-  await loginOk(page, "crochet@conserve.test", "demo123");
+  await loginOk(page, "crochet@boutique.test", "demo123");
   await expect(page).toHaveURL(/creator\/boutique/);
   await page.goto("/admin");
   await expect(page).toHaveURL(/creator\/boutique/);
