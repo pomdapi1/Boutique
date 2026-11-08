@@ -2,7 +2,7 @@
 set -e
 
 echo "[entrypoint] application des migrations…"
-node node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
+node /app/prisma-cli/node_modules/prisma/build/index.js migrate deploy --schema prisma/schema.prisma
 
 echo "[entrypoint] démarrage de Boutique"
 exec node server.js
