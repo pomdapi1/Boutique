@@ -40,6 +40,7 @@ La base SQLite (`/app/data/boutique.db`) et les documents des créateurs (`/app/
 | `AUTH_SECRET` | chaîne aléatoire ≥ 32 caractères (`openssl rand -base64 48`) |
 | `ADMIN_EMAIL` | email du premier compte admin |
 | `ADMIN_PASSWORD` | mot de passe initial (≥ 10 caractères) — créé au 1er démarrage, à retirer ensuite |
+| `ADMIN_RESET_PASSWORD` | `true` uniquement pour réinitialiser le mot de passe de `ADMIN_EMAIL` avec `ADMIN_PASSWORD` au prochain démarrage — à retirer ensuite |
 | `CONTACT_EMAIL` | email affiché sur la page de connexion (« mot de passe oublié ») |
 | `SUMUP_MODE` | `live` |
 | `SUMUP_API_KEY` | clé secrète SumUp `sk_…` (cocher *secret*) |
