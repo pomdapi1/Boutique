@@ -1,0 +1,17 @@
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Données locales (base SQLite + documents déposés)
+data/
+prisma/*.db
+prisma/*.db-journal
+
+.env
+.env.local
+
+test-results/
+playwright-report/
+coverage/

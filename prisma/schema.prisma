@@ -1,0 +1,190 @@
+// Conserve — modèle de données
+// Montants stockés en centimes (Int) pour éviter les erreurs d'arrondi.
+// Les "enums" sont des String (compatibilité SQLite) ; valeurs listées en commentaire
+// et centralisées dans src/lib/constants.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         String // ADMIN | CREATOR
+  creatorId    String?   @unique
+  creator      Creator?  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+
+  notificationReads NotificationRead[]
+}
+
+model Creator {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  contactEmail   String?
+  // Commission Conserve, sur le CA brut (0.30 = 30 %)
+  commissionRate Float    @default(0.3)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  user          User?
+  products      Product[]
+  saleItems     SaleItem[]
+  documents     Document[]
+  notifications Notification[]
+  payouts       Payout[]
+  requests      ProductRequest[]
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  creatorId  String
+  creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  code       String // "012" — unique par créateur
+  name       String
+  priceCents Int
+  category   String?
+  stock      Int      @default(0)
+  status     String   @default("PENDING") // PENDING | ACTIVE | REJECTED | ARCHIVED
+  // Nom exact de l'article dans la caisse SumUp (sinon "code - nom - créateur")
+  sumupName  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  saleItems SaleItem[]
+  movements StockMovement[]
+  requests  ProductRequest[]
+
+  @@unique([creatorId, code])
+}
+
+// Demande de modification d'un produit actif, soumise à validation admin
+model ProductRequest {
+  id         String    @id @default(cuid())
+  productId  String
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  creatorId  String
+  creator    Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  changes    String // JSON { name?, priceCents?, category? }
+  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  adminNote  String?
+  createdAt  DateTime  @default(now())
+  decidedAt  DateTime?
+}
+
+model StockMovement {
+  id         String   @id @default(cuid())
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  delta      Int
+  reason     String // SALE | REFUND | RESTOCK | REMOVAL | CORRECTION
+  note       String?
+  saleItemId String?
+  userId     String?
+  createdAt  DateTime @default(now())
+
+  @@index([productId])
+}
+
+model Sale {
+  id              String   @id @default(cuid())
+  externalId      String   @unique // id de transaction SumUp (ou SIM-xxx)
+  transactionCode String?
+  occurredAt      DateTime
+  totalCents      Int
+  feeCents        Int // frais SumUp de la transaction
+  paymentType     String // CARD | CASH | OTHER
+  status          String   @default("SUCCESSFUL") // SUCCESSFUL | REFUNDED
+  source          String // SUMUP | SIMULATION
+  createdAt       DateTime @default(now())
+
+  items SaleItem[]
+
+  @@index([occurredAt])
+}
+
+model SaleItem {
+  id              String   @id @default(cuid())
+  saleId          String
+  sale            Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  creatorId       String?
+  creator         Creator? @relation(fields: [creatorId], references: [id], onDelete: SetNull)
+  label           String // libellé tel que reçu de SumUp
+  quantity        Int
+  unitPriceCents  Int
+  totalCents      Int
+  feeCents        Int // quote-part des frais SumUp
+  commissionRate  Float // taux figé au moment de la vente
+  commissionCents Int
+
+  @@index([creatorId])
+  @@index([productId])
+}
+
+model Document {
+  id         String   @id @default(cuid())
+  creatorId  String
+  creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  type       String // RIB | RC_PRO | KBIS | INVOICE
+  filename   String
+  storedName String
+  sizeBytes  Int
+  mimeType   String
+  createdAt  DateTime @default(now())
+}
+
+// Cible : creatorId renseigné → ce créateur ; forAdmin → les admins ;
+// sinon → tous les créateurs.
+model Notification {
+  id        String   @id @default(cuid())
+  creatorId String?
+  creator   Creator? @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  forAdmin  Boolean  @default(false)
+  kind      String // INFO | STOCK_OUT | REQUEST | CLOSING | PRODUCT
+  title     String
+  body      String
+  link      String?
+  createdAt DateTime @default(now())
+
+  reads NotificationRead[]
+}
+
+model NotificationRead {
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  readAt         DateTime     @default(now())
+
+  @@id([userId, notificationId])
+}
+
+// Clôture mensuelle : montant figé à reverser à chaque créateur
+model Payout {
+  id              String    @id @default(cuid())
+  creatorId       String
+  creator         Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  month           String // "2026-10"
+  grossCents      Int
+  feeCents        Int
+  commissionCents Int
+  netCents        Int
+  closedAt        DateTime  @default(now())
+  paidAt          DateTime?
+
+  @@unique([creatorId, month])
+}
+
+model Setting {
+  key   String @id
+  value String
+}

@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  --color-plum-950: #2c0719;
+  --color-plum-900: #3a0b24;
+  --color-plum-800: #4d1633;
+  --color-plum-700: #5e2443;
+  --color-plum-100: #ece4e8;
+  --color-plum-50: #f5f0f2;
+  --color-coral-600: #e04848;
+  --color-coral-500: #f25f5c;
+  --color-coral-100: #fde4e2;
+  --color-coral-50: #fbefee;
+  --color-cream: #f8f7f4;
+  --color-line: #ebe8e3;
+  --color-ink: #1d1a1b;
+  --color-muted: #6f6866;
+  --color-success: #1f7a4d;
+  --color-success-bg: #e6f4ec;
+  --color-card-blue: #2d5bd7;
+
+  --font-sans: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-logo: var(--font-anton), "Impact", sans-serif;
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.logo {
+  font-family: var(--font-logo);
+  color: var(--color-coral-500);
+  letter-spacing: 0.01em;
+  transform: skewX(-8deg);
+  display: inline-block;
+  line-height: 1;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+.btn-primary {
+  @apply bg-coral-500 text-white hover:bg-coral-600;
+}
+.btn-dark {
+  @apply bg-plum-900 text-white hover:bg-plum-800;
+}
+.btn-outline {
+  @apply border border-line bg-white text-ink hover:bg-cream;
+}
+.btn-ghost {
+  @apply text-ink hover:bg-plum-50;
+}
+.btn-danger {
+  @apply border border-coral-100 bg-white text-coral-600 hover:bg-coral-50;
+}
+.btn-sm {
+  @apply rounded-lg px-3 py-1.5 text-sm;
+}
+
+.input {
+  @apply w-full rounded-xl border border-line bg-cream px-4 py-2.5 text-sm outline-none transition placeholder:text-muted/70 focus:border-plum-700 focus:bg-white focus:ring-2 focus:ring-plum-100;
+}
+.label {
+  @apply mb-1.5 block text-sm font-semibold;
+}
+.card {
+  @apply rounded-2xl border border-line/70 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)];
+}
+.eyebrow {
+  @apply text-xs font-semibold tracking-wide text-muted uppercase;
+}
+.page-title {
+  @apply text-3xl font-bold text-plum-900 sm:text-4xl;
+}
+
+.hatch {
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--color-coral-500) 0 4px,
+    #f78a87 4px 7px
+  );
+}

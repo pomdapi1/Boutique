@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  DATABASE_URL: file:../data/ci.db
+  UPLOAD_DIR: ./data/uploads
+  AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-1234
+  TZ: Europe/Paris
+  SUMUP_MODE: mock
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Vérification des types
+        run: npm run typecheck
+      - name: Tests unitaires
+        run: npm test
+      - name: Build
+        run: npx next build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: cp .env.example .env && sed -i 's/^AUTH_SECRET=.*/AUTH_SECRET="ci-secret-ci-secret-ci-secret-ci-secret-1234"/' .env
+      - run: npx prisma migrate deploy && npm run seed
+      - run: npx playwright install --with-deps chromium
+      - name: Tests de bout en bout
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results

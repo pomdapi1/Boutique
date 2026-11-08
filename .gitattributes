@@ -1,0 +1,4 @@
+* text=auto
+# Scripts shell exécutés dans le conteneur Linux : toujours en LF
+*.sh text eol=lf
+*.png binary
