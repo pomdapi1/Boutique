@@ -5,11 +5,11 @@ import { normalize } from "@/lib/attribution";
 import { PageHeader, StatusBadge, TabLinks, EmptyState, Pill } from "@/components/ui";
 import { SearchInput } from "@/components/filters";
 import { SortHeader } from "@/components/sort-header";
-import { CreateProductDialog, EditProductDialog, StockDialog } from "@/components/product-dialogs";
-import { adjustStockAction, createProductAction, requestProductChangeAction } from "@/app/actions/creator";
+import { CreateProductDialog, DeleteProductDialog, EditProductDialog, StockDialog } from "@/components/product-dialogs";
+import { adjustStockAction, createProductAction, deleteProductAction, requestProductChangeAction } from "@/app/actions/creator";
 
 type SP = Promise<Record<string, string | undefined>>;
-const SORTS = ["reference", "name", "price", "category", "stock", "status"] as const;
+const SORTS = ["reference", "name", "price", "stock", "status"] as const;
 
 export default async function ProductsPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
@@ -28,20 +28,18 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
   let rows = tab === "rupture" ? outOfStock : all;
   if (q) {
     const nq = normalize(q);
-    rows = rows.filter((p) => normalize(`${p.code} ${p.reference ?? ""} ${p.name} ${p.category ?? ""}`).includes(nq));
+    rows = rows.filter((p) => normalize(`${p.reference ?? ""} ${p.name}`).includes(nq));
   }
   const key = (p: (typeof all)[number]) =>
     sort === "price"
       ? p.priceCents
       : sort === "stock"
         ? p.stock
-        : sort === "category"
-          ? (p.category ?? "")
-          : sort === "status"
-            ? p.status
-            : sort === "reference"
-              ? (p.reference ?? "")
-              : p.code;
+        : sort === "status"
+          ? p.status
+          : sort === "reference"
+            ? (p.reference ?? "")
+            : p.name;
   rows = [...rows].sort((a, b) => {
     const ka = key(a), kb = key(b);
     const c = typeof ka === "number" ? ka - (kb as number) : String(ka).localeCompare(String(kb), "fr");
@@ -82,7 +80,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                 <SortHeader label="Référence" field="reference" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Nom" field="name" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Prix" field="price" sort={sort} dir={dir} baseParams={base} className="text-right" />
-                <SortHeader label="Catégorie" field="category" sort={sort} dir={dir} baseParams={base} />
+                <th className="px-4 py-4 font-semibold text-muted">Marque</th>
                 <SortHeader label="Quantité" field="stock" sort={sort} dir={dir} baseParams={base} className="text-right" />
                 <SortHeader label="Statut" field="status" sort={sort} dir={dir} baseParams={base} />
                 <th />
@@ -94,11 +92,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                   <td className="px-4 py-4 font-mono text-sm whitespace-nowrap">
                     {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
                   </td>
-                  <td className="px-4 py-4">
-                    {p.code} - {p.name} - {creator.name}
-                  </td>
+                  <td className="px-4 py-4">{p.name}</td>
                   <td className="px-4 py-4 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
-                  <td className="px-4 py-4">{p.category ?? creator.name}</td>
+                  <td className="px-4 py-4 whitespace-nowrap">{creator.name}</td>
                   <td className={`px-4 py-4 text-right font-medium ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
                   <td className="px-4 py-4">
                     <div className="flex flex-wrap gap-1">
@@ -110,6 +106,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                     <div className="flex justify-end gap-2">
                       {p.status !== "REJECTED" && <StockDialog product={p} action={adjustStockAction} />}
                       <EditProductDialog product={p} action={requestProductChangeAction} pending={p.requests.length > 0} />
+                      <DeleteProductDialog product={p} status={p.status} action={deleteProductAction} />
                     </div>
                   </td>
                 </tr>

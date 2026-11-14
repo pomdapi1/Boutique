@@ -18,6 +18,7 @@ export async function loadItems(scope: Scope, start: Date, end: Date) {
     include: {
       sale: { select: { id: true, occurredAt: true, paymentType: true } },
       product: { select: { id: true, code: true, name: true } },
+      creator: { select: { name: true } },
     },
     orderBy: { sale: { occurredAt: "desc" } },
   });
@@ -45,8 +46,8 @@ export type StatsResult = {
   comparisonToDate: boolean;
   monthly: { month: MonthKey; grossCents: number; netCents: number }[];
   averageMonthlyGross: number;
-  topQuantity: { label: string; value: number }[];
-  topAmount: { label: string; value: number }[];
+  topQuantity: { id: string; label: string; value: number }[];
+  topAmount: { id: string; label: string; value: number }[];
   payments: { type: string; cents: number }[];
 };
 
@@ -56,7 +57,9 @@ function summarize(items: LoadedItem[]) {
   return { ...b, salesCount, avgTicketCents: salesCount ? Math.round(b.grossCents / salesCount) : 0 };
 }
 
-export async function computeStats(scope: Scope, key: MonthKey): Promise<StatsResult> {
+/** withCodes=false : libellés sans le code "012 - " (espace créateur). */
+export async function computeStats(scope: Scope, key: MonthKey, opts: { withCodes?: boolean } = {}): Promise<StatsResult> {
+  const withCodes = opts.withCodes ?? true;
   const months = lastMonths(key, 12);
   const { end } = monthRange(key);
   const { start: seriesStart } = monthRange(months[0]!);
@@ -83,11 +86,12 @@ export async function computeStats(scope: Scope, key: MonthKey): Promise<StatsRe
     ? Math.round(activeMonths.reduce((a, m) => a + m.grossCents, 0) / activeMonths.length)
     : 0;
 
-  const perProduct = new Map<string, { label: string; qty: number; cents: number }>();
+  const perProduct = new Map<string, { id: string; label: string; qty: number; cents: number }>();
   for (const it of currentItems) {
     const key = it.productId ?? `label:${it.label}`;
-    const label = it.product ? `${it.product.code} - ${it.product.name}` : it.label;
-    const cur = perProduct.get(key) ?? { label, qty: 0, cents: 0 };
+    const brand = "all" in scope && it.creator ? ` — ${it.creator.name}` : "";
+    const label = it.product ? (withCodes ? `${it.product.code} - ${it.product.name}` : `${it.product.name}${brand}`) : it.label;
+    const cur = perProduct.get(key) ?? { id: key, label, qty: 0, cents: 0 };
     cur.qty += it.quantity;
     cur.cents += it.totalCents;
     perProduct.set(key, cur);
@@ -96,11 +100,11 @@ export async function computeStats(scope: Scope, key: MonthKey): Promise<StatsRe
   const topQuantity = [...prods]
     .sort((a, b) => b.qty - a.qty || b.cents - a.cents)
     .slice(0, 10)
-    .map((p) => ({ label: p.label, value: p.qty }));
+    .map((p) => ({ id: p.id, label: p.label, value: p.qty }));
   const topAmount = [...prods]
     .sort((a, b) => b.cents - a.cents)
     .slice(0, 10)
-    .map((p) => ({ label: p.label, value: p.cents }));
+    .map((p) => ({ id: p.id, label: p.label, value: p.cents }));
 
   const payMap = new Map<string, number>();
   for (const it of currentItems) payMap.set(it.sale.paymentType, (payMap.get(it.sale.paymentType) ?? 0) + it.totalCents);

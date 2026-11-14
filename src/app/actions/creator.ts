@@ -97,7 +97,7 @@ export async function createProductAction(_p: ActionState, fd: FormData): Promis
     link: "/admin/products",
   });
   revalidatePath("/creator/products");
-  return { ok: true, message: `Produit ${code} (réf. ${ref.value}) créé — en attente de validation.` };
+  return { ok: true, message: `Produit « ${parsed.data.name} » (réf. ${ref.value}) créé — en attente de validation.` };
 }
 
 export async function requestProductChangeAction(_p: ActionState, fd: FormData): Promise<ActionState> {
@@ -153,6 +153,45 @@ export async function requestProductChangeAction(_p: ActionState, fd: FormData):
   });
   revalidatePath("/creator/products");
   return { ok: true, message: "Demande envoyée : elle sera appliquée après validation par Les Songes Créatifs." };
+}
+
+/**
+ * Suppression d'un produit par son créateur.
+ * - Jamais vendu : suppression définitive (mouvements de stock et demandes en cascade).
+ * - Déjà vendu : archivé (masqué du catalogue) pour conserver l'historique des ventes
+ *   et des statistiques ; sa référence est libérée pour pouvoir être réutilisée.
+ */
+export async function deleteProductAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  const { creator } = await requireCreator();
+  const product = await prisma.product.findFirst({
+    where: { id: String(fd.get("productId")), creatorId: creator.id, status: { not: "ARCHIVED" } },
+  });
+  if (!product) return { error: "Produit introuvable." };
+
+  const sold = await prisma.saleItem.count({ where: { productId: product.id } });
+  if (sold === 0) {
+    await prisma.product.delete({ where: { id: product.id } });
+  } else {
+    await prisma.$transaction([
+      prisma.product.update({ where: { id: product.id }, data: { status: "ARCHIVED", reference: null } }),
+      prisma.productRequest.updateMany({
+        where: { productId: product.id, status: "PENDING" },
+        data: { status: "REJECTED", adminNote: "Produit supprimé par le créateur", decidedAt: new Date() },
+      }),
+    ]);
+  }
+
+  // Un produit déjà validé est présent dans la caisse : l'admin doit l'en retirer.
+  if (product.status === "ACTIVE") {
+    await notifyAdmins({
+      kind: "PRODUCT",
+      title: "Produit supprimé par un créateur",
+      body: `${productLabel(product)} — ${creator.name}${product.stock > 0 ? ` (stock restant : ${product.stock})` : ""}\nPensez à retirer l'article de la caisse SumUp.`,
+      link: "/admin/products?tab=all",
+    });
+  }
+  revalidatePath("/creator/products");
+  return { ok: true, message: `« ${product.name} » a été supprimé de votre catalogue.` };
 }
 
 export async function uploadDocumentAction(_p: ActionState, fd: FormData): Promise<ActionState> {

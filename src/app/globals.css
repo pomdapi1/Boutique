@@ -59,6 +59,10 @@ body {
 .btn-danger {
   @apply border border-danger-100 bg-white text-danger-600 hover:bg-danger-50;
 }
+/* Bouton de confirmation d'une action destructrice (défini après .btn-primary pour l'emporter) */
+.btn-danger-solid {
+  @apply bg-danger-600 text-white hover:bg-danger-500;
+}
 .btn-sm {
   @apply rounded-lg px-3 py-1.5 text-sm;
 }

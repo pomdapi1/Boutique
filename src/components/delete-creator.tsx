@@ -136,7 +136,7 @@ export function DeleteCreatorButton({ creator, compact }: { creator: CreatorDele
 
 function ConfirmDeleteButton({ enabled }: { enabled: boolean }) {
   return (
-    <SubmitButton className="bg-danger-600 hover:bg-danger-500" disabled={!enabled} pendingLabel="Suppression…">
+    <SubmitButton className="btn-danger-solid" disabled={!enabled} pendingLabel="Suppression…">
       <Trash2 size={16} aria-hidden /> Supprimer définitivement
     </SubmitButton>
   );

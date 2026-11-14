@@ -31,7 +31,10 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   // Ajout de stock sur le premier produit
   await page.getByRole("link", { name: "Mes produits" }).click();
   await expect(page.getByRole("heading", { name: "Mon catalogue" })).toBeVisible();
-  const row = page.getByRole("row", { name: /001 - Porte-clefs Petit/ });
+  const row = page.getByRole("row", { name: /Porte-clefs Petit/ });
+  // Catalogue créateur : plus de code "001 - " devant le nom, colonne Marque
+  await expect(row).not.toContainText("001 -");
+  await expect(page.getByRole("columnheader", { name: "Marque" })).toBeVisible();
   const before = Number(await row.getByRole("cell").nth(4).innerText());
   await row.getByRole("button", { name: "Stock" }).click();
   await page.getByLabel("Quantité").fill("2");
@@ -140,6 +143,31 @@ test("admin : un créateur avec des ventes ne peut pas être supprimé", async (
   await expect(page.getByRole("button", { name: "Supprimer définitivement" })).toHaveCount(0);
   await page.getByRole("button", { name: "Annuler" }).click();
   await expect(page.getByRole("row", { name: /Le jardin du crochet/ })).toContainText("Actif");
+});
+
+test("créateur : suppression d'un produit avec confirmation", async ({ page }) => {
+  const stamp = Date.now();
+  const name = `A supprimer ${stamp}`;
+  await loginOk(page, "crochet@boutique.test", "demo123");
+  await page.goto("/creator/products");
+  await page.getByRole("button", { name: "Ajouter des produits" }).click();
+  await page.getByLabel("Référence produit").fill(`DEL-${stamp}`);
+  await page.getByLabel("Nom du produit").fill(name);
+  await page.getByLabel("Prix (€)").fill("5");
+  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
+  await expect(page.getByText(/en attente de validation/)).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  const row = page.getByRole("row", { name: new RegExp(name) });
+  await row.getByRole("button", { name: `Supprimer ${name}` }).click();
+  await expect(page.getByRole("dialog")).toContainText("ne peut pas être annulée");
+  // Annuler ne supprime rien
+  await page.getByRole("button", { name: "Annuler" }).click();
+  await expect(row).toHaveCount(1);
+  // Confirmer supprime
+  await row.getByRole("button", { name: `Supprimer ${name}` }).click();
+  await page.getByRole("button", { name: "Supprimer le produit" }).click();
+  await expect(page.getByRole("row", { name: new RegExp(name) })).toHaveCount(0);
 });
 
 test("un créateur n'accède pas à l'admin", async ({ page }) => {

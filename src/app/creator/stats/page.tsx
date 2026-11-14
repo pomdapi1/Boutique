@@ -15,7 +15,7 @@ export default async function StatsPage({ searchParams }: { searchParams: SP }) 
   const tab = sp.tab === "shop" ? "shop" : "mine";
 
   const [stats, outOfStock] = await Promise.all([
-    computeStats(tab === "mine" ? { creatorId: creator.id } : { all: true }, month),
+    computeStats(tab === "mine" ? { creatorId: creator.id } : { all: true }, month, { withCodes: false }),
     prisma.product.count({ where: { creatorId: creator.id, status: "ACTIVE", stock: { lte: 0 } } }),
   ]);
 

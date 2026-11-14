@@ -23,8 +23,10 @@ export async function loadShopFeed(opts: { since: Date; until?: Date; limit?: nu
 
 export type FeedSale = Awaited<ReturnType<typeof loadShopFeed>>[number];
 
-export function itemDisplay(it: FeedSale["items"][number]): { title: string; creator: string | null } {
-  if (it.product && it.creator) return { title: `${it.product.code} - ${it.product.name}`, creator: it.creator.name };
+/** withCode : préfixe "012 - " (utile à l'admin pour la caisse SumUp, masqué côté créateur). */
+export function itemDisplay(it: FeedSale["items"][number], withCode = true): { title: string; creator: string | null } {
+  if (it.product && it.creator)
+    return { title: withCode ? `${it.product.code} - ${it.product.name}` : it.product.name, creator: it.creator.name };
   return { title: it.label, creator: it.creator?.name ?? null };
 }
 

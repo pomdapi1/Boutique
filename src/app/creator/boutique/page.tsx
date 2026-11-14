@@ -48,7 +48,7 @@ export default async function BoutiquePage() {
       {sales.length === 0 ? (
         <EmptyState>Aucune vente sur les 7 derniers jours.</EmptyState>
       ) : (
-        <SaleFeed sales={sales} highlightCreatorId={creator.id} />
+        <SaleFeed sales={sales} highlightCreatorId={creator.id} showCodes={false} />
       )}
     </div>
   );

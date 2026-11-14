@@ -20,7 +20,7 @@ export default async function SalesPage({ searchParams }: { searchParams: SP }) 
 
   const [items, products] = await Promise.all([
     loadCreatorSales(creator.id, filters),
-    prisma.product.findMany({ where: { creatorId: creator.id }, orderBy: { code: "asc" }, select: { id: true, code: true, name: true } }),
+    prisma.product.findMany({ where: { creatorId: creator.id }, orderBy: { name: "asc" }, select: { id: true, code: true, name: true } }),
   ]);
   const b = breakdown(items);
   const groups =
@@ -59,7 +59,7 @@ export default async function SalesPage({ searchParams }: { searchParams: SP }) 
           label="Produit"
           className="max-w-72 flex-1"
           value={filters.productId ?? ""}
-          options={[{ value: "", label: "Tous les produits" }, ...products.map((p) => ({ value: p.id, label: `${p.code} - ${p.name}` }))]}
+          options={[{ value: "", label: "Tous les produits" }, ...products.map((p) => ({ value: p.id, label: p.name }))]}
         />
         <a href={`/api/export/sales?${exportQs}`} className="btn btn-outline h-12 sm:ml-auto">
           <FileText size={18} /> Exporter en PDF
@@ -106,7 +106,7 @@ export default async function SalesPage({ searchParams }: { searchParams: SP }) 
                     <div className="flex-1">
                       <div className="font-semibold">
                         {it.quantity > 1 && `${it.quantity} × `}
-                        {it.product ? `${it.product.code} - ${it.product.name}` : it.label}
+                        {it.product ? it.product.name : it.label}
                       </div>
                       <div className="text-sm text-muted">
                         {filters.sort === "amount" && `${it.sale.occurredAt.toLocaleDateString("fr-FR")} · `}

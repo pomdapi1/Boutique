@@ -8,7 +8,7 @@ import { Trend } from "./ui";
 import { MonthlyRevenueChart, Sparkline } from "./charts";
 import { cn } from "@/lib/utils";
 
-function TopList({ title, rows, format }: { title: string; rows: { label: string; value: number }[]; format: (v: number) => string }) {
+function TopList({ title, rows, format }: { title: string; rows: { id: string; label: string; value: number }[]; format: (v: number) => string }) {
   const max = Math.max(...rows.map((r) => r.value), 1);
   return (
     <div className="card p-6">
@@ -16,7 +16,7 @@ function TopList({ title, rows, format }: { title: string; rows: { label: string
       {rows.length === 0 && <p className="text-sm text-muted">Aucune vente ce mois-ci.</p>}
       <ol className="space-y-2">
         {rows.map((r, i) => (
-          <li key={r.label} className="relative flex items-center gap-3 px-4 py-2.5">
+          <li key={r.id} className="relative flex items-center gap-3 px-4 py-2.5">
             <span
               className={cn("absolute inset-y-0 left-0 rounded-lg", i === 0 ? "bg-sage-200" : "bg-sage-100/70")}
               style={{ width: `${Math.max(8, (r.value / max) * 100)}%` }}

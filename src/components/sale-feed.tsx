@@ -18,10 +18,13 @@ export function SaleFeed({
   sales,
   highlightCreatorId,
   extra,
+  showCodes = true,
 }: {
   sales: FeedSale[];
   highlightCreatorId?: string;
   extra?: (sale: FeedSale) => React.ReactNode;
+  /** Préfixe "012 - " devant les produits (admin uniquement). */
+  showCodes?: boolean;
 }) {
   const groups = groupByDay(sales, (s) => s.occurredAt);
   return (
@@ -39,7 +42,7 @@ export function SaleFeed({
               const mine = highlightCreatorId && sale.items.some((i) => i.creatorId === highlightCreatorId);
               const title = sale.items
                 .map((it) => {
-                  const d = itemDisplay(it);
+                  const d = itemDisplay(it, showCodes);
                   return `${it.quantity > 1 ? `${it.quantity} × ` : ""}${d.title}${d.creator ? ` — ${d.creator}` : ""}`;
                 })
                 .join(", ");
@@ -72,7 +75,7 @@ export function SaleFeed({
                       <summary className="cursor-pointer list-none hover:bg-cream/60 [&::-webkit-details-marker]:hidden">{header}</summary>
                       <ul className="divide-y divide-line bg-cream/50">
                         {sale.items.map((it) => {
-                          const d = itemDisplay(it);
+                          const d = itemDisplay(it, showCodes);
                           const isMine = highlightCreatorId && it.creatorId === highlightCreatorId;
                           return (
                             <li key={it.id} className="relative flex items-center gap-3 py-3 pr-14 pl-16 text-sm">

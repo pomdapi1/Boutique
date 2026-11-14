@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDownUp, Pencil, Plus } from "lucide-react";
+import { AlertTriangle, ArrowDownUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { Modal } from "./modal";
 import { ActionForm, SubmitButton, type FormAction } from "./action-form";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,7 @@ export function StockDialog({ product, action }: { product: P; action: FormActio
   const [direction, setDirection] = useState<"add" | "remove">("add");
   return (
     <Modal
-      title={`Stock — ${product.code} - ${product.name}`}
+      title={`Stock — ${product.name}`}
       triggerClassName="btn btn-outline btn-sm"
       trigger={
         <>
@@ -131,7 +131,7 @@ function ProductFields({ product, withQuantity }: { product?: P; withQuantity?: 
 export function EditProductDialog({ product, action, pending }: { product: P; action: FormAction; pending?: boolean }) {
   return (
     <Modal
-      title={`Modifier — ${product.code}`}
+      title={`Modifier — ${product.name}`}
       triggerClassName="btn btn-outline btn-sm"
       trigger={
         <>
@@ -156,6 +156,48 @@ export function EditProductDialog({ product, action, pending }: { product: P; ac
   );
 }
 
+export function DeleteProductDialog({ product, status, action }: { product: P; status: string; action: FormAction }) {
+  return (
+    <Modal
+      title={`Supprimer « ${product.name} » ?`}
+      triggerClassName="btn btn-danger btn-sm px-2"
+      trigger={
+        <>
+          <Trash2 size={16} aria-hidden />
+          <span className="sr-only">Supprimer {product.name}</span>
+        </>
+      }
+    >
+      {(close) => (
+        <ActionForm action={action} onSuccess={close} className="space-y-4">
+          <input type="hidden" name="productId" value={product.id} />
+          <p className="flex gap-3 rounded-xl bg-danger-50 p-4 text-danger-600">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0" aria-hidden />
+            <span>Le produit sera retiré de votre catalogue. Cette action ne peut pas être annulée.</span>
+          </p>
+          <ul className="list-disc space-y-1 pl-6 text-muted">
+            <li>Les ventes déjà réalisées restent dans vos ventes, statistiques et relevés.</li>
+            {status === "ACTIVE" && <li>Les Songes Créatifs sera prévenu pour retirer l&apos;article de la caisse.</li>}
+            {product.stock > 0 && (
+              <li>
+                <strong className="text-ink">{product.stock} exemplaire(s)</strong> encore en stock : pensez à les récupérer en boutique.
+              </li>
+            )}
+          </ul>
+          <div className="flex justify-end gap-2">
+            <button type="button" className="btn btn-outline" onClick={close}>
+              Annuler
+            </button>
+            <SubmitButton className="btn-danger-solid" pendingLabel="Suppression…">
+              <Trash2 size={16} aria-hidden /> Supprimer le produit
+            </SubmitButton>
+          </div>
+        </ActionForm>
+      )}
+    </Modal>
+  );
+}
+
 export function CreateProductDialog({ action }: { action: FormAction }) {
   return (
     <Modal
@@ -170,7 +212,7 @@ export function CreateProductDialog({ action }: { action: FormAction }) {
       <ActionForm action={action} resetOnSuccess className="space-y-5">
         <ProductFields withQuantity />
         <p className="text-sm text-muted">
-          Le code produit est attribué automatiquement. Le produit sera « En attente » jusqu&apos;à sa validation et son ajout dans la caisse.
+          Le produit sera « En attente » jusqu&apos;à sa validation par Les Songes Créatifs et son ajout dans la caisse.
         </p>
         <SubmitButton className="w-full">Ajouter</SubmitButton>
       </ActionForm>
