@@ -14,6 +14,8 @@ import { syncSumUp } from "@/lib/sumup/sync";
 import { simulateSales } from "@/lib/sumup/simulate";
 import { SumUpClient } from "@/lib/sumup/client";
 import { productLabel } from "@/lib/utils";
+import { normalizeReference } from "@/lib/reference";
+import { isReferenceTaken } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
 
 function fail(e: z.ZodError): ActionState {
@@ -134,22 +136,32 @@ export async function rejectProductAction(fd: FormData) {
 
 export async function decideRequestAction(fd: FormData) {
   await requireAdmin();
-  const approve = fd.get("decision") === "approve";
+  let approve = fd.get("decision") === "approve";
   const req = await prisma.productRequest.findUnique({ where: { id: String(fd.get("id")) }, include: { product: true } });
   if (!req || req.status !== "PENDING") return;
-  const changes = JSON.parse(req.changes) as { name?: string; priceCents?: number; category?: string };
+  const changes = JSON.parse(req.changes) as { name?: string; priceCents?: number; category?: string; reference?: string };
+  let note = String(fd.get("note") ?? "") || null;
+
+  // La référence demandée a pu être prise entre-temps par un autre produit du créateur.
+  if (approve && changes.reference) {
+    const taken = await isReferenceTaken(req.creatorId, changes.reference, req.productId);
+    if (taken) {
+      approve = false;
+      note = taken;
+    }
+  }
 
   await prisma.$transaction([
     prisma.productRequest.update({
       where: { id: req.id },
-      data: { status: approve ? "APPROVED" : "REJECTED", decidedAt: new Date(), adminNote: String(fd.get("note") ?? "") || null },
+      data: { status: approve ? "APPROVED" : "REJECTED", decidedAt: new Date(), adminNote: note },
     }),
     ...(approve ? [prisma.product.update({ where: { id: req.productId }, data: changes })] : []),
   ]);
   await notifyCreator(req.creatorId, {
     kind: "REQUEST",
     title: approve ? "Modification validée par Les Songes Créatifs" : "Modification refusée",
-    body: `Modification · ${productLabel(req.product)}`,
+    body: `Modification · ${productLabel(req.product)}${note ? `\n${note}` : ""}`,
     link: "/creator/products",
   });
   revalidatePath("/admin/products");
@@ -167,11 +179,21 @@ export async function adminUpdateProductAction(_p: ActionState, fd: FormData): P
   if (name.length < 2) return { error: "Nom trop court." };
   const status = String(fd.get("status"));
   if (!["PENDING", "ACTIVE", "REJECTED", "ARCHIVED"].includes(status)) return { error: "Statut invalide." };
+  // Référence facultative côté admin (produits anciens sans référence), mais validée si renseignée.
+  let reference: string | null = null;
+  if (String(fd.get("reference") ?? "").trim()) {
+    const ref = normalizeReference(fd.get("reference"));
+    if ("error" in ref) return { error: ref.error };
+    const taken = await isReferenceTaken(product.creatorId, ref.value, product.id);
+    if (taken) return { error: taken };
+    reference = ref.value;
+  }
 
   await prisma.$transaction([
     prisma.product.update({
       where: { id: product.id },
       data: {
+        reference,
         name,
         priceCents,
         stock: stock.data,

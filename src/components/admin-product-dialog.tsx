@@ -8,6 +8,7 @@ import { PRODUCT_STATUS_LABEL } from "@/lib/constants";
 type P = {
   id: string;
   code: string;
+  reference: string | null;
   name: string;
   priceCents: number;
   category: string | null;
@@ -30,9 +31,26 @@ export function AdminProductDialog({ product, action }: { product: P; action: Fo
     >
       <ActionForm action={action} className="space-y-4">
         <input type="hidden" name="id" value={product.id} />
-        <div>
-          <label className="label">Nom</label>
-          <input name="name" defaultValue={product.name} required className="input" />
+        <div className="grid grid-cols-[2fr_3fr] gap-4">
+          <div>
+            <label className="label" htmlFor={`ref-${product.id}`}>
+              Référence
+            </label>
+            <input
+              id={`ref-${product.id}`}
+              name="reference"
+              maxLength={40}
+              defaultValue={product.reference ?? ""}
+              placeholder="à renseigner"
+              className="input uppercase placeholder:normal-case"
+            />
+          </div>
+          <div>
+            <label className="label" htmlFor={`name-${product.id}`}>
+              Nom
+            </label>
+            <input id={`name-${product.id}`} name="name" defaultValue={product.name} required className="input" />
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>

@@ -6,7 +6,15 @@ import { Modal } from "./modal";
 import { ActionForm, SubmitButton, type FormAction } from "./action-form";
 import { cn } from "@/lib/utils";
 
-type P = { id: string; code: string; name: string; priceCents: number; category: string | null; stock: number };
+type P = {
+  id: string;
+  code: string;
+  reference: string | null;
+  name: string;
+  priceCents: number;
+  category: string | null;
+  stock: number;
+};
 
 export function StockDialog({ product, action }: { product: P; action: FormAction }) {
   const [direction, setDirection] = useState<"add" | "remove">("add");
@@ -62,6 +70,25 @@ function ProductFields({ product, withQuantity }: { product?: P; withQuantity?: 
   return (
     <>
       <div>
+        <label className="label" htmlFor="reference">
+          Référence produit
+        </label>
+        <input
+          id="reference"
+          name="reference"
+          required
+          maxLength={40}
+          autoComplete="off"
+          defaultValue={product?.reference ?? ""}
+          className="input uppercase placeholder:normal-case"
+          placeholder="ex. POT-PETIT-01"
+          aria-describedby="reference-hint"
+        />
+        <p id="reference-hint" className="mt-1 text-xs text-muted">
+          Votre référence, unique parmi vos produits : lettres, chiffres, tirets.
+        </p>
+      </div>
+      <div>
         <label className="label" htmlFor="name">
           Nom du produit
         </label>
@@ -95,7 +122,7 @@ function ProductFields({ product, withQuantity }: { product?: P; withQuantity?: 
         <label className="label" htmlFor="category">
           Catégorie
         </label>
-        <input id="category" name="category" defaultValue={product?.category ?? ""} className="input" placeholder="Par défaut : votre nom de créateur" />
+        <input id="category" name="category" defaultValue={product?.category ?? ""} className="input" placeholder="Par défaut : le nom de votre marque" />
       </div>
     </>
   );

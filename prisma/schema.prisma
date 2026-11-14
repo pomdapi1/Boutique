@@ -52,6 +52,9 @@ model Product {
   creatorId  String
   creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   code       String // "012" — unique par créateur
+  // Référence choisie par le créateur (ex. "BAG-01"), unique par créateur,
+  // stockée en majuscules. Nulle pour les produits créés avant son ajout.
+  reference  String?
   name       String
   priceCents Int
   category   String?
@@ -67,6 +70,7 @@ model Product {
   requests  ProductRequest[]
 
   @@unique([creatorId, code])
+  @@unique([creatorId, reference])
 }
 
 // Demande de modification d'un produit actif, soumise à validation admin

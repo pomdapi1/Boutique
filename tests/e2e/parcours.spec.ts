@@ -32,23 +32,34 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   await page.getByRole("link", { name: "Mes produits" }).click();
   await expect(page.getByRole("heading", { name: "Mon catalogue" })).toBeVisible();
   const row = page.getByRole("row", { name: /001 - Porte-clefs Petit/ });
-  const before = Number(await row.getByRole("cell").nth(3).innerText());
+  const before = Number(await row.getByRole("cell").nth(4).innerText());
   await row.getByRole("button", { name: "Stock" }).click();
   await page.getByLabel("Quantité").fill("2");
   await page.getByRole("button", { name: "Valider" }).click();
   await expect(page.getByText(`Stock mis à jour : ${before + 2}.`)).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(row.getByRole("cell").nth(3)).toHaveText(String(before + 2));
+  await expect(row.getByRole("cell").nth(4)).toHaveText(String(before + 2));
 
   // Nouveau produit → en attente
-  const name = `Produit e2e ${Date.now()}`;
+  const stamp = Date.now();
+  const name = `Produit e2e ${stamp}`;
+  const reference = `e2e-${stamp}`;
   await page.getByRole("button", { name: "Ajouter des produits" }).click();
+  await page.getByLabel("Référence produit").fill(reference);
   await page.getByLabel("Nom du produit").fill(name);
   await page.getByLabel("Prix (€)").fill("14,50");
   await page.getByRole("button", { name: "Ajouter", exact: true }).click();
   await expect(page.getByText(/en attente de validation/)).toBeVisible();
+  // Même référence une seconde fois : refusée
+  await page.getByLabel("Référence produit").fill(reference);
+  await page.getByLabel("Nom du produit").fill(`${name} bis`);
+  await page.getByLabel("Prix (€)").fill("10");
+  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
+  await expect(page.getByText(/est déjà utilisée par/)).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("row", { name: new RegExp(name) })).toContainText("En attente");
+  const newRow = page.getByRole("row", { name: new RegExp(name) });
+  await expect(newRow).toContainText("En attente");
+  await expect(newRow).toContainText(reference.toUpperCase());
 
   // Déconnexion → admin valide
   await logout(page);
@@ -58,6 +69,15 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   const item = page.getByRole("listitem").filter({ hasText: name });
   await item.getByRole("button", { name: "Valider" }).click();
   await expect(page.getByRole("listitem").filter({ hasText: name })).toHaveCount(0);
+
+  // Tous les produits : colonnes Référence, Marque, Nom du créateur
+  await page.goto(`/admin/products?tab=all&q=${encodeURIComponent(reference)}`);
+  for (const col of ["Référence", "Marque", "Nom du créateur"]) {
+    await expect(page.getByRole("columnheader", { name: col, exact: true })).toBeVisible();
+  }
+  const adminRow = page.getByRole("row", { name: new RegExp(name) });
+  await expect(adminRow).toContainText(reference.toUpperCase());
+  await expect(adminRow).toContainText("Le jardin du crochet");
 
   // Retour créateur : produit actif + notification
   await logout(page);

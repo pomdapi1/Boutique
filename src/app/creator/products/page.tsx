@@ -9,7 +9,7 @@ import { CreateProductDialog, EditProductDialog, StockDialog } from "@/component
 import { adjustStockAction, createProductAction, requestProductChangeAction } from "@/app/actions/creator";
 
 type SP = Promise<Record<string, string | undefined>>;
-const SORTS = ["name", "price", "category", "stock", "status"] as const;
+const SORTS = ["reference", "name", "price", "category", "stock", "status"] as const;
 
 export default async function ProductsPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
@@ -28,10 +28,20 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
   let rows = tab === "rupture" ? outOfStock : all;
   if (q) {
     const nq = normalize(q);
-    rows = rows.filter((p) => normalize(`${p.code} ${p.name} ${p.category ?? ""}`).includes(nq));
+    rows = rows.filter((p) => normalize(`${p.code} ${p.reference ?? ""} ${p.name} ${p.category ?? ""}`).includes(nq));
   }
   const key = (p: (typeof all)[number]) =>
-    sort === "price" ? p.priceCents : sort === "stock" ? p.stock : sort === "category" ? (p.category ?? "") : sort === "status" ? p.status : p.code;
+    sort === "price"
+      ? p.priceCents
+      : sort === "stock"
+        ? p.stock
+        : sort === "category"
+          ? (p.category ?? "")
+          : sort === "status"
+            ? p.status
+            : sort === "reference"
+              ? (p.reference ?? "")
+              : p.code;
   rows = [...rows].sort((a, b) => {
     const ka = key(a), kb = key(b);
     const c = typeof ka === "number" ? ka - (kb as number) : String(ka).localeCompare(String(kb), "fr");
@@ -47,7 +57,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
         subtitle="Les produits « En attente » doivent être validés par l'administrateur."
         actions={
           <>
-            <SearchInput value={q} placeholder="Rechercher un produit…" />
+            <SearchInput value={q} placeholder="Produit ou référence…" />
             <CreateProductDialog action={createProductAction} />
           </>
         }
@@ -66,9 +76,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
         <EmptyState>{tab === "rupture" ? "Aucun produit en rupture de stock." : "Aucun produit."}</EmptyState>
       ) : (
         <div className="card overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left">
+          <table className="w-full min-w-[900px] text-left">
             <thead className="border-b border-line">
               <tr>
+                <SortHeader label="Référence" field="reference" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Nom" field="name" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Prix" field="price" sort={sort} dir={dir} baseParams={base} className="text-right" />
                 <SortHeader label="Catégorie" field="category" sort={sort} dir={dir} baseParams={base} />
@@ -80,6 +91,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
             <tbody className="divide-y divide-line">
               {rows.map((p) => (
                 <tr key={p.id} className="hover:bg-cream/60">
+                  <td className="px-4 py-4 font-mono text-sm whitespace-nowrap">
+                    {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
+                  </td>
                   <td className="px-4 py-4">
                     {p.code} - {p.name} - {creator.name}
                   </td>

@@ -8,6 +8,8 @@ import { parseEurosToCents } from "@/lib/money";
 import { notifyAdmins } from "@/lib/notifications";
 import { DocumentError, deleteDocument, saveDocument } from "@/lib/documents";
 import { productLabel } from "@/lib/utils";
+import { normalizeReference } from "@/lib/reference";
+import { isReferenceTaken } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
 
 const qtySchema = z.coerce.number().int().min(1, "Quantité minimale : 1").max(10000);
@@ -63,16 +65,21 @@ export async function createProductAction(_p: ActionState, fd: FormData): Promis
     category: fd.get("category") || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]!.message };
+  const ref = normalizeReference(fd.get("reference"));
+  if ("error" in ref) return { error: ref.error };
   const priceCents = parseEurosToCents(parsed.data.price);
   if (priceCents === null || priceCents <= 0) return { error: "Prix invalide." };
   const qty = z.coerce.number().int().min(0).max(10000).safeParse(fd.get("quantity") || 0);
   if (!qty.success) return { error: "Quantité invalide." };
+  const taken = await isReferenceTaken(creator.id, ref.value);
+  if (taken) return { error: taken };
 
   const code = await nextProductCode(creator.id);
   const product = await prisma.product.create({
     data: {
       creatorId: creator.id,
       code,
+      reference: ref.value,
       name: parsed.data.name,
       priceCents,
       category: parsed.data.category || creator.name,
@@ -90,7 +97,7 @@ export async function createProductAction(_p: ActionState, fd: FormData): Promis
     link: "/admin/products",
   });
   revalidatePath("/creator/products");
-  return { ok: true, message: `Produit ${code} créé — en attente de validation.` };
+  return { ok: true, message: `Produit ${code} (réf. ${ref.value}) créé — en attente de validation.` };
 }
 
 export async function requestProductChangeAction(_p: ActionState, fd: FormData): Promise<ActionState> {
@@ -106,10 +113,17 @@ export async function requestProductChangeAction(_p: ActionState, fd: FormData):
     category: fd.get("category") || undefined,
   });
   if (!parsed.success) return { error: parsed.error.issues[0]!.message };
+  const ref = normalizeReference(fd.get("reference"));
+  if ("error" in ref) return { error: ref.error };
   const priceCents = parseEurosToCents(parsed.data.price);
   if (priceCents === null || priceCents <= 0) return { error: "Prix invalide." };
 
   const changes: Record<string, string | number> = {};
+  if (ref.value !== product.reference) {
+    const taken = await isReferenceTaken(creator.id, ref.value, product.id);
+    if (taken) return { error: taken };
+    changes.reference = ref.value;
+  }
   if (parsed.data.name !== product.name) changes.name = parsed.data.name;
   if (priceCents !== product.priceCents) changes.priceCents = priceCents;
   if ((parsed.data.category || null) !== product.category && parsed.data.category) changes.category = parsed.data.category;

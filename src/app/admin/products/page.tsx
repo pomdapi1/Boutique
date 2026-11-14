@@ -10,9 +10,10 @@ import { adminUpdateProductAction, approveProductAction, decideRequestAction, re
 
 type SP = Promise<Record<string, string | undefined>>;
 
-function describeChanges(raw: string, p: { name: string; priceCents: number; category: string | null }) {
-  const c = JSON.parse(raw) as { name?: string; priceCents?: number; category?: string };
+function describeChanges(raw: string, p: { reference: string | null; name: string; priceCents: number; category: string | null }) {
+  const c = JSON.parse(raw) as { reference?: string; name?: string; priceCents?: number; category?: string };
   const out: string[] = [];
+  if (c.reference !== undefined) out.push(`Référence : ${p.reference ?? "—"} → ${c.reference}`);
   if (c.name !== undefined) out.push(`Nom : « ${p.name} » → « ${c.name} »`);
   if (c.priceCents !== undefined) out.push(`Prix : ${euros(p.priceCents)} → ${euros(c.priceCents)}`);
   if (c.category !== undefined) out.push(`Catégorie : ${p.category ?? "—"} → ${c.category}`);
@@ -56,10 +57,14 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
                     <li key={p.id} className="card flex flex-col gap-4 p-5 lg:flex-row lg:items-center">
                       <div className="flex-1">
                         <div className="font-semibold">
-                          {p.code} - {p.name} <span className="font-normal text-muted">— {p.creator.name}</span>
+                          {p.code} - {p.name}{" "}
+                          <span className="font-normal text-muted">
+                            — {p.creator.name}
+                            {p.creator.ownerName ? ` (${p.creator.ownerName})` : ""}
+                          </span>
                         </div>
                         <div className="text-sm text-muted">
-                          {euros(p.priceCents)} · stock {p.stock} · {p.category ?? p.creator.name} · demandé {relativeLabel(p.createdAt)}
+                          Réf. {p.reference ?? "—"} · {euros(p.priceCents)} · stock {p.stock} · {p.category ?? p.creator.name} · demandé {relativeLabel(p.createdAt)}
                         </div>
                       </div>
                       <form action={approveProductAction} className="flex flex-wrap items-center gap-2">
@@ -137,23 +142,25 @@ async function AllProducts({ sp, creators }: { sp: Record<string, string | undef
       ...(creatorId ? { creatorId } : {}),
       ...(sp.stock === "out" ? { stock: { lte: 0 }, status: "ACTIVE" } : {}),
     },
-    include: { creator: { select: { name: true } } },
+    include: { creator: { select: { name: true, ownerName: true } } },
     orderBy: [{ creator: { name: "asc" } }, { code: "asc" }],
   });
   if (q) {
     const nq = normalize(q);
-    products = products.filter((p) => normalize(`${p.code} ${p.name} ${p.creator.name}`).includes(nq));
+    products = products.filter((p) =>
+      normalize(`${p.code} ${p.reference ?? ""} ${p.name} ${p.creator.name} ${p.creator.ownerName ?? ""}`).includes(nq),
+    );
   }
 
   return (
     <>
       <div className="mb-4 flex flex-wrap gap-3">
-        <SearchInput value={q} placeholder="Rechercher…" />
+        <SearchInput value={q} placeholder="Produit, référence, marque…" />
         <ParamSelect
           name="creator"
-          label="Créateur"
+          label="Marque"
           value={creatorId}
-          options={[{ value: "", label: "Tous les créateurs" }, ...creators.map((c) => ({ value: c.id, label: c.name }))]}
+          options={[{ value: "", label: "Toutes les marques" }, ...creators.map((c) => ({ value: c.id, label: c.name }))]}
         />
         <ParamSelect
           name="stock"
@@ -166,11 +173,13 @@ async function AllProducts({ sp, creators }: { sp: Record<string, string | undef
         />
       </div>
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[820px] text-left">
-          <thead className="border-b border-line text-muted">
+        <table className="w-full min-w-[1000px] text-left">
+          <thead className="border-b border-line whitespace-nowrap text-muted">
             <tr>
+              <th className="px-4 py-4 font-semibold">Référence</th>
               <th className="px-4 py-4 font-semibold">Produit</th>
-              <th className="px-4 py-4 font-semibold">Créateur</th>
+              <th className="px-4 py-4 font-semibold">Marque</th>
+              <th className="px-4 py-4 font-semibold">Nom du créateur</th>
               <th className="px-4 py-4 text-right font-semibold">Prix</th>
               <th className="px-4 py-4 text-right font-semibold">Stock</th>
               <th className="px-4 py-4 font-semibold">Statut</th>
@@ -180,11 +189,15 @@ async function AllProducts({ sp, creators }: { sp: Record<string, string | undef
           <tbody className="divide-y divide-line">
             {products.map((p) => (
               <tr key={p.id} className="hover:bg-cream/60">
+                <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">
+                  {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
+                </td>
                 <td className="px-4 py-3">
                   {p.code} - {p.name}
                 </td>
-                <td className="px-4 py-3">{p.creator.name}</td>
-                <td className="px-4 py-3 text-right">{euros(p.priceCents)}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{p.creator.name}</td>
+                <td className="px-4 py-3 whitespace-nowrap">{p.creator.ownerName ?? <span className="text-muted">—</span>}</td>
+                <td className="px-4 py-3 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
                 <td className={`px-4 py-3 text-right ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={p.status} />
