@@ -45,20 +45,35 @@ export default async function CreatorsPage() {
           >
             <ActionForm action={createCreatorAction} resetOnSuccess className="space-y-4">
               <div>
-                <label className="label">Nom du créateur / de la marque</label>
-                <input name="name" required className="input" />
+                <label className="label" htmlFor="new-owner">
+                  Nom du créateur
+                </label>
+                <input id="new-owner" name="ownerName" required autoComplete="off" placeholder="Marie Dupont" className="input" />
               </div>
               <div>
-                <label className="label">Email de connexion</label>
-                <input name="email" type="email" required className="input" />
+                <label className="label" htmlFor="new-brand">
+                  Nom de la marque
+                </label>
+                <input id="new-brand" name="name" required autoComplete="off" placeholder="Le jardin du crochet" className="input" />
+                <p className="mt-1 text-xs text-muted">Affiché dans l&apos;application et utilisé dans les noms d&apos;articles de la caisse SumUp.</p>
               </div>
               <div>
-                <label className="label">Mot de passe provisoire</label>
-                <input name="password" type="text" minLength={8} required className="input" />
+                <label className="label" htmlFor="new-email">
+                  Email de connexion
+                </label>
+                <input id="new-email" name="email" type="email" required autoComplete="off" className="input" />
               </div>
               <div>
-                <label className="label">Commission Les Songes Créatifs (%)</label>
-                <input name="commission" type="number" step="0.5" min={0} max={100} placeholder={String(Math.round(defaultRate * 100))} className="input" />
+                <label className="label" htmlFor="new-password">
+                  Mot de passe provisoire
+                </label>
+                <input id="new-password" name="password" type="text" minLength={8} required autoComplete="off" className="input" />
+              </div>
+              <div>
+                <label className="label" htmlFor="new-commission">
+                  Commission Les Songes Créatifs (%)
+                </label>
+                <input id="new-commission" name="commission" type="number" step="0.5" min={0} max={100} placeholder={String(Math.round(defaultRate * 100))} className="input" />
               </div>
               <SubmitButton className="w-full">Créer le compte</SubmitButton>
             </ActionForm>
@@ -69,7 +84,7 @@ export default async function CreatorsPage() {
         <table className="w-full min-w-[760px] text-left">
           <thead className="border-b border-line text-muted">
             <tr>
-              <th className="px-5 py-4 font-semibold">Créateur</th>
+              <th className="px-5 py-4 font-semibold">Marque / créateur</th>
               <th className="px-5 py-4 text-right font-semibold">Commission</th>
               <th className="px-5 py-4 text-right font-semibold">Produits actifs</th>
               <th className="px-5 py-4 text-right font-semibold">CA du mois</th>
@@ -86,7 +101,9 @@ export default async function CreatorsPage() {
                     <Link href={`/admin/creators/${c.id}`} className="font-semibold hover:underline">
                       {c.name}
                     </Link>
-                    <div className="text-sm text-muted">{c.user?.email ?? "—"}</div>
+                    <div className="text-sm text-muted">
+                      {c.ownerName ?? <span className="italic">nom du créateur à renseigner</span>} · {c.user?.email ?? "—"}
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-right">{Math.round(c.commissionRate * 1000) / 10} %</td>
                   <td className="px-5 py-4 text-right">{c._count.products}</td>

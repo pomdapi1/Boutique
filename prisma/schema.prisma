@@ -27,7 +27,11 @@ model User {
 
 model Creator {
   id             String   @id @default(cuid())
+  // Nom de la marque : affiché partout et utilisé pour reconnaître les ventes
+  // SumUp ("012 - Pot de fleurs - <marque>")
   name           String   @unique
+  // Nom de la personne (prénom nom) derrière la marque
+  ownerName      String?
   contactEmail   String?
   // Commission Les Songes Créatifs, sur le CA brut (0.30 = 30 %)
   commissionRate Float    @default(0.3)

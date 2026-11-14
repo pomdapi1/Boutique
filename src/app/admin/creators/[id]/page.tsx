@@ -30,7 +30,9 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
       </Link>
       <PageHeader
         title={creator.name}
-        subtitle={creator.user?.lastLoginAt ? `Dernière connexion : ${creator.user.lastLoginAt.toLocaleString("fr-FR")}` : "Jamais connecté"}
+        subtitle={`${creator.ownerName ? `${creator.ownerName} · ` : ""}${
+          creator.user?.lastLoginAt ? `Dernière connexion : ${creator.user.lastLoginAt.toLocaleString("fr-FR")}` : "Jamais connecté"
+        }`}
         actions={
           <a className="btn btn-outline" href={`/api/export/sales?creator=${creator.id}&m=${lastMonth}`}>
             <FileText size={18} /> Relevé {monthLabel(lastMonth)}
@@ -44,16 +46,32 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
           <ActionForm action={updateCreatorAction} className="space-y-4">
             <input type="hidden" name="id" value={creator.id} />
             <div>
-              <label className="label">Nom (doit correspondre au nom utilisé dans SumUp)</label>
-              <input name="name" defaultValue={creator.name} required className="input" />
+              <label className="label" htmlFor="owner">
+                Nom du créateur
+              </label>
+              <input id="owner" name="ownerName" defaultValue={creator.ownerName ?? ""} required placeholder="Marie Dupont" className="input" />
             </div>
             <div>
-              <label className="label">Email de connexion</label>
-              <input name="email" type="email" defaultValue={creator.user?.email ?? creator.contactEmail ?? ""} required className="input" />
+              <label className="label" htmlFor="brand">
+                Nom de la marque
+              </label>
+              <input id="brand" name="name" defaultValue={creator.name} required className="input" />
+              <p className="mt-1 text-xs text-muted">
+                Doit correspondre au nom utilisé dans les articles de la caisse SumUp : si vous le changez, renommez aussi les articles.
+              </p>
             </div>
             <div>
-              <label className="label">Commission Les Songes Créatifs (%)</label>
+              <label className="label" htmlFor="email">
+                Email de connexion
+              </label>
+              <input id="email" name="email" type="email" defaultValue={creator.user?.email ?? creator.contactEmail ?? ""} required className="input" />
+            </div>
+            <div>
+              <label className="label" htmlFor="commission">
+                Commission Les Songes Créatifs (%)
+              </label>
               <input
+                id="commission"
                 name="commission"
                 type="number"
                 step="0.5"
@@ -74,7 +92,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
           <h2 className="mb-4 text-lg font-semibold">Réinitialiser le mot de passe</h2>
           <ActionForm action={resetPasswordAction} resetOnSuccess className="space-y-4">
             <input type="hidden" name="creatorId" value={creator.id} />
-            <input name="password" type="text" minLength={8} required placeholder="Nouveau mot de passe" className="input" />
+            <input name="password" type="text" minLength={8} required placeholder="Nouveau mot de passe" aria-label="Nouveau mot de passe" className="input" />
             <SubmitButton className="btn-dark">Mettre à jour</SubmitButton>
           </ActionForm>
         </div>

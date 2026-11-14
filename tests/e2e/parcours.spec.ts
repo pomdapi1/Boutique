@@ -68,6 +68,32 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   await expect(page.getByText("Produit validé par Les Songes Créatifs").first()).toBeVisible();
 });
 
+test("admin : création d'un créateur avec nom de personne et nom de marque", async ({ page }) => {
+  const stamp = Date.now();
+  const owner = `Alice Test ${stamp}`;
+  const brand = `Marque e2e ${stamp}`;
+  const email = `e2e-${stamp}@boutique.test`;
+
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/creators");
+  await page.getByRole("button", { name: "Ajouter un créateur" }).click();
+  await page.getByLabel("Nom du créateur").fill(owner);
+  await page.getByLabel("Nom de la marque").fill(brand);
+  await page.getByLabel("Email de connexion").fill(email);
+  await page.getByLabel("Mot de passe provisoire").fill("motdepasse123");
+  await page.getByRole("button", { name: "Créer le compte" }).click();
+  await expect(page.getByText(`Compte créé pour ${owner} (${brand})`)).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  const row = page.getByRole("row", { name: new RegExp(brand) });
+  await expect(row).toContainText(owner);
+
+  // Le créateur se connecte : le menu affiche le nom de sa marque
+  await logout(page);
+  await loginOk(page, email, "motdepasse123");
+  await expect(page.getByText(brand).first()).toBeVisible();
+});
+
 test("un créateur n'accède pas à l'admin", async ({ page }) => {
   await loginOk(page, "crochet@boutique.test", "demo123");
   await expect(page).toHaveURL(/creator\/boutique/);

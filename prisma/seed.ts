@@ -56,6 +56,9 @@ const OTHERS: { name: string; slug: string; products: [string, number][] }[] = [
   { name: "Koloro", slug: "koloro", products: [["Print A5", 12], ["Print A4", 20], ["Calendrier", 18]] },
 ];
 
+// Noms de personnes fictifs pour la démo
+const DEMO_OWNERS = ["Léa Bernard", "Hugo Petit", "Chloé Robert", "Lucas Richard", "Manon Durand", "Nathan Moreau", "Inès Simon", "Théo Laurent", "Jade Michel", "Louis Garcia", "Emma Roux"];
+
 async function writeDemoPdf(creatorId: string, label: string) {
   const dir = path.resolve(process.env.UPLOAD_DIR ?? "./data/uploads", creatorId);
   await mkdir(dir, { recursive: true });
@@ -90,6 +93,7 @@ async function main() {
   const crochet = await prisma.creator.create({
     data: {
       name: "Le jardin du crochet",
+      ownerName: "Camille Martin",
       contactEmail: "crochet@boutique.test",
       commissionRate: 0.3,
       user: { create: { email: "crochet@boutique.test", passwordHash: demoHash, role: "CREATOR" } },
@@ -103,6 +107,7 @@ async function main() {
     const creator = await prisma.creator.create({
       data: {
         name: c.name,
+        ownerName: DEMO_OWNERS[i % DEMO_OWNERS.length],
         contactEmail: `${c.slug}@boutique.test`,
         commissionRate: i % 4 === 0 ? 0.25 : 0.3,
         user: { create: { email: `${c.slug}@boutique.test`, passwordHash: demoHash, role: "CREATOR" } },

@@ -28,7 +28,8 @@ export async function createCreatorAction(_p: ActionState, fd: FormData): Promis
   await requireAdmin();
   const parsed = z
     .object({
-      name: z.string().trim().min(2, "Nom trop court").max(80),
+      ownerName: z.string().trim().min(2, "Nom du créateur trop court").max(80),
+      name: z.string().trim().min(2, "Nom de la marque trop court").max(80),
       email: z.string().trim().toLowerCase().email("Email invalide"),
       password: z.string().min(8, "Mot de passe : 8 caractères minimum"),
       commission: z.union([z.literal(""), pct]).optional(),
@@ -37,19 +38,20 @@ export async function createCreatorAction(_p: ActionState, fd: FormData): Promis
   if (!parsed.success) return fail(parsed.error);
   const d = parsed.data;
   if (await prisma.user.findUnique({ where: { email: d.email } })) return { error: "Cet email est déjà utilisé." };
-  if (await prisma.creator.findUnique({ where: { name: d.name } })) return { error: "Ce nom de créateur existe déjà." };
+  if (await prisma.creator.findUnique({ where: { name: d.name } })) return { error: "Cette marque existe déjà." };
 
   const rate = d.commission === "" || d.commission === undefined ? await getDefaultCommissionRate() : Number(d.commission) / 100;
   await prisma.creator.create({
     data: {
       name: d.name,
+      ownerName: d.ownerName,
       contactEmail: d.email,
       commissionRate: rate,
       user: { create: { email: d.email, passwordHash: await hashPassword(d.password), role: "CREATOR" } },
     },
   });
   revalidatePath("/admin/creators");
-  return { ok: true, message: `Compte créé pour ${d.name}. Transmettez-lui ses identifiants.` };
+  return { ok: true, message: `Compte créé pour ${d.ownerName} (${d.name}). Transmettez-lui ses identifiants.` };
 }
 
 export async function updateCreatorAction(_p: ActionState, fd: FormData): Promise<ActionState> {
@@ -57,7 +59,8 @@ export async function updateCreatorAction(_p: ActionState, fd: FormData): Promis
   const parsed = z
     .object({
       id: z.string(),
-      name: z.string().trim().min(2).max(80),
+      ownerName: z.string().trim().min(2, "Nom du créateur trop court").max(80),
+      name: z.string().trim().min(2, "Nom de la marque trop court").max(80),
       email: z.string().trim().toLowerCase().email("Email invalide"),
       commission: pct,
       active: z.string().optional(),
@@ -69,11 +72,14 @@ export async function updateCreatorAction(_p: ActionState, fd: FormData): Promis
   if (!creator) return { error: "Créateur introuvable." };
   const clash = await prisma.user.findFirst({ where: { email: d.email, NOT: { creatorId: d.id } } });
   if (clash) return { error: "Cet email est déjà utilisé." };
+  const brandClash = await prisma.creator.findFirst({ where: { name: d.name, NOT: { id: d.id } } });
+  if (brandClash) return { error: "Cette marque existe déjà." };
 
   await prisma.creator.update({
     where: { id: d.id },
     data: {
       name: d.name,
+      ownerName: d.ownerName,
       contactEmail: d.email,
       commissionRate: d.commission / 100,
       active: d.active === "on",
