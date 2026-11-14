@@ -1,4 +1,4 @@
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { prisma } from "./db";
@@ -70,6 +70,13 @@ export async function saveDocument(opts: {
   } else {
     await prisma.document.create({ data: { ...data, creatorId: opts.creatorId, type: opts.type } });
   }
+}
+
+/** Supprime le dossier de documents d'un créateur (après suppression du créateur en base). */
+export async function deleteCreatorFiles(creatorId: string) {
+  // creatorId est un cuid généré par la base : on vérifie tout de même qu'il ne sort pas du dossier.
+  if (!/^[a-z0-9]+$/i.test(creatorId)) return;
+  await rm(path.join(uploadDir(), creatorId), { recursive: true, force: true });
 }
 
 export async function deleteDocument(id: string, creatorId: string) {

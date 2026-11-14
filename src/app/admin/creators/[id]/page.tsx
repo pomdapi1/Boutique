@@ -8,6 +8,7 @@ import { PageHeader, StatusBadge, Pill } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { DocumentsList } from "@/components/documents-list";
 import { resetPasswordAction, updateCreatorAction } from "@/app/actions/admin";
+import { DeleteCreatorButton } from "@/components/delete-creator";
 
 export default async function CreatorDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -18,6 +19,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
       documents: { orderBy: { createdAt: "desc" } },
       products: { orderBy: { code: "asc" } },
       payouts: { orderBy: { month: "desc" }, take: 12 },
+      _count: { select: { saleItems: true, payouts: true } },
     },
   });
   if (!creator) notFound();
@@ -143,6 +145,26 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
           </tbody>
         </table>
       </div>
+
+      <section className="mt-10 flex flex-col gap-4 rounded-2xl border border-danger-100 bg-white p-6 sm:flex-row sm:items-center">
+        <div className="flex-1">
+          <h2 className="text-lg font-semibold">Supprimer ce créateur</h2>
+          <p className="mt-1 text-sm text-muted">
+            Possible uniquement s&apos;il n&apos;a ni vente ni reversement. Sinon, désactivez son compte pour conserver l&apos;historique.
+          </p>
+        </div>
+        <DeleteCreatorButton
+          creator={{
+            id: creator.id,
+            name: creator.name,
+            active: creator.active,
+            sales: creator._count.saleItems,
+            payouts: creator._count.payouts,
+            products: creator.products.length,
+            documents: creator.documents.length,
+          }}
+        />
+      </section>
     </div>
   );
 }

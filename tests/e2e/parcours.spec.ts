@@ -112,6 +112,34 @@ test("admin : création d'un créateur avec nom de personne et nom de marque", a
   await logout(page);
   await loginOk(page, email, "motdepasse123");
   await expect(page.getByText(brand).first()).toBeVisible();
+
+  // Suppression par l'admin (aucune vente) : confirmation par saisie du nom de la marque
+  await logout(page);
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/creators");
+  await page.getByRole("button", { name: `Supprimer ${brand}` }).click();
+  const confirmBtn = page.getByRole("button", { name: "Supprimer définitivement" });
+  await expect(confirmBtn).toBeDisabled();
+  await page.getByLabel(/Pour confirmer, saisissez le nom de la marque/).fill(brand);
+  await expect(confirmBtn).toBeEnabled();
+  await confirmBtn.click();
+  await expect(page.getByRole("row", { name: new RegExp(brand) })).toHaveCount(0);
+
+  // Le compte supprimé ne peut plus se connecter
+  await logout(page);
+  await login(page, email, "motdepasse123");
+  await expect(page.getByText("Identifiants incorrects.")).toBeVisible();
+});
+
+test("admin : un créateur avec des ventes ne peut pas être supprimé", async ({ page }) => {
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/creators");
+  await page.getByRole("button", { name: "Supprimer Le jardin du crochet" }).click();
+  await expect(page.getByText(/ne peut pas être supprimé/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Désactiver le compte" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Supprimer définitivement" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Annuler" }).click();
+  await expect(page.getByRole("row", { name: /Le jardin du crochet/ })).toContainText("Actif");
 });
 
 test("un créateur n'accède pas à l'admin", async ({ page }) => {

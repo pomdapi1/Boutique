@@ -54,7 +54,11 @@ export function Modal({
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className={cn("relative w-full rounded-2xl bg-cream p-6 shadow-xl sm:p-8", wide ? "max-w-5xl" : "max-w-lg")}
+            className={cn(
+              // text-left : la modale peut être déclenchée depuis une cellule alignée à droite
+              "relative w-full rounded-2xl bg-cream p-6 text-left font-normal whitespace-normal shadow-xl sm:p-8",
+              wide ? "max-w-5xl" : "max-w-lg",
+            )}
           >
             <button type="button" onClick={close} className="absolute top-5 right-5 text-muted hover:text-ink" aria-label="Fermer">
               <X size={20} />

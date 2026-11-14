@@ -10,22 +10,25 @@ import { PageHeader, Pill } from "@/components/ui";
 import { Modal } from "@/components/modal";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createCreatorAction } from "@/app/actions/admin";
+import { DeleteCreatorButton } from "@/components/delete-creator";
 
 export default async function CreatorsPage() {
   const m = monthKey(new Date());
-  const [creators, payouts, defaultRate] = await Promise.all([
+  const [creators, payouts, defaultRate, productCounts] = await Promise.all([
     prisma.creator.findMany({
       orderBy: { name: "asc" },
       include: {
         user: { select: { email: true, lastLoginAt: true } },
         documents: { select: { type: true } },
-        _count: { select: { products: { where: { status: "ACTIVE" } } } },
+        _count: { select: { products: { where: { status: "ACTIVE" } }, saleItems: true, payouts: true } },
       },
     }),
     computePayouts(m),
     getDefaultCommissionRate(),
+    prisma.product.groupBy({ by: ["creatorId"], _count: true }),
   ]);
   const grossMap = new Map(payouts.map((p) => [p.creator.id, p.computed.grossCents]));
+  const allProducts = new Map(productCounts.map((g) => [g.creatorId, g._count]));
   const required = DOCUMENT_TYPES.filter((t) => t.type !== "INVOICE");
 
   return (
@@ -90,6 +93,9 @@ export default async function CreatorsPage() {
               <th className="px-5 py-4 text-right font-semibold">CA du mois</th>
               <th className="px-5 py-4 font-semibold">Documents</th>
               <th className="px-5 py-4 font-semibold">Statut</th>
+              <th className="px-5 py-4">
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -112,6 +118,20 @@ export default async function CreatorsPage() {
                     {missing.length === 0 ? <Pill tone="green">Complet</Pill> : <Pill tone="amber">Manque : {missing.map((t) => t.label).join(", ")}</Pill>}
                   </td>
                   <td className="px-5 py-4">{c.active ? <Pill tone="green">Actif</Pill> : <Pill>Désactivé</Pill>}</td>
+                  <td className="px-5 py-4 text-right">
+                    <DeleteCreatorButton
+                      compact
+                      creator={{
+                        id: c.id,
+                        name: c.name,
+                        active: c.active,
+                        sales: c._count.saleItems,
+                        payouts: c._count.payouts,
+                        products: allProducts.get(c.id) ?? 0,
+                        documents: c.documents.length,
+                      }}
+                    />
+                  </td>
                 </tr>
               );
             })}

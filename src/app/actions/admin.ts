@@ -15,6 +15,7 @@ import { simulateSales } from "@/lib/sumup/simulate";
 import { SumUpClient } from "@/lib/sumup/client";
 import { productLabel } from "@/lib/utils";
 import { normalizeReference } from "@/lib/reference";
+import { deleteCreatorFiles } from "@/lib/documents";
 import { isReferenceTaken } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
 
@@ -90,6 +91,46 @@ export async function updateCreatorAction(_p: ActionState, fd: FormData): Promis
   });
   revalidatePath("/admin/creators");
   return { ok: true, message: "Modifications enregistrées. Le nouveau taux s'applique aux prochaines ventes." };
+}
+
+/** Ventes et reversements rattachés : s'il y en a, la suppression est refusée (historique comptable).
+ *  Non exportée : dans un fichier "use server", toute fonction exportée devient appelable depuis le navigateur. */
+async function creatorHistory(creatorId: string) {
+  const [sales, payouts] = await Promise.all([
+    prisma.saleItem.count({ where: { creatorId } }),
+    prisma.payout.count({ where: { creatorId } }),
+  ]);
+  return { sales, payouts };
+}
+
+export async function deleteCreatorAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const id = String(fd.get("id") ?? "");
+  const creator = await prisma.creator.findUnique({ where: { id } });
+  if (!creator) return { error: "Créateur introuvable." };
+  if (String(fd.get("confirm") ?? "").trim() !== creator.name)
+    return { error: `Pour confirmer, saisissez exactement « ${creator.name} ».` };
+
+  const h = await creatorHistory(id);
+  if (h.sales > 0 || h.payouts > 0)
+    return {
+      error: `Suppression impossible : ${h.sales} ligne(s) de vente et ${h.payouts} reversement(s) sont rattachés à ce créateur. Désactivez plutôt son compte.`,
+    };
+
+  // Compte de connexion, produits, demandes, documents et notifications sont supprimés en cascade.
+  await prisma.creator.delete({ where: { id } });
+  await deleteCreatorFiles(id);
+  revalidatePath("/admin", "layout");
+  return { ok: true, message: `${creator.name} a été supprimé.` };
+}
+
+export async function setCreatorActiveAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  await requireAdmin();
+  const active = fd.get("active") === "true";
+  const r = await prisma.creator.updateMany({ where: { id: String(fd.get("id") ?? "") }, data: { active } });
+  if (r.count === 0) return { error: "Créateur introuvable." };
+  revalidatePath("/admin", "layout");
+  return { ok: true, message: active ? "Compte réactivé." : "Compte désactivé : le créateur ne peut plus se connecter." };
 }
 
 export async function resetPasswordAction(_p: ActionState, fd: FormData): Promise<ActionState> {
