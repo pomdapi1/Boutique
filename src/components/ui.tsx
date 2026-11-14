@@ -71,7 +71,7 @@ export function StatusBadge({ status }: { status: string }) {
     ARCHIVED: "bg-line text-muted",
   };
   return (
-    <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold", styles[status] ?? "bg-line")}>
+    <span className={cn("inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap", styles[status] ?? "bg-line")}>
       {PRODUCT_STATUS_LABEL[status] ?? status}
     </span>
   );

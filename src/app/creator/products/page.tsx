@@ -74,13 +74,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
         <EmptyState>{tab === "rupture" ? "Aucun produit en rupture de stock." : "Aucun produit."}</EmptyState>
       ) : (
         <div className="card overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left">
+          <table className="w-full min-w-[760px] text-left">
             <thead className="border-b border-line">
               <tr>
                 <SortHeader label="Référence" field="reference" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Nom" field="name" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Prix" field="price" sort={sort} dir={dir} baseParams={base} className="text-right" />
-                <th className="px-4 py-4 font-semibold text-muted">Marque</th>
+                <th className="px-3 py-4 font-semibold text-muted">Marque</th>
                 <SortHeader label="Quantité" field="stock" sort={sort} dir={dir} baseParams={base} className="text-right" />
                 <SortHeader label="Statut" field="status" sort={sort} dir={dir} baseParams={base} />
                 <th />
@@ -89,20 +89,20 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
             <tbody className="divide-y divide-line">
               {rows.map((p) => (
                 <tr key={p.id} className="hover:bg-cream/60">
-                  <td className="px-4 py-4 font-mono text-sm whitespace-nowrap">
+                  <td className="px-3 py-4 font-mono text-sm whitespace-nowrap">
                     {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
                   </td>
-                  <td className="px-4 py-4">{p.name}</td>
-                  <td className="px-4 py-4 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
-                  <td className="px-4 py-4 whitespace-nowrap">{creator.name}</td>
-                  <td className={`px-4 py-4 text-right font-medium ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-4">{p.name}</td>
+                  <td className="px-3 py-4 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
+                  <td className="px-3 py-4">{creator.name}</td>
+                  <td className={`px-3 py-4 text-right font-medium ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
+                  <td className="px-3 py-4">
                     <div className="flex flex-wrap gap-1">
                       <StatusBadge status={p.status} />
                       {p.requests.length > 0 && <Pill tone="amber">Modif. en attente</Pill>}
                     </div>
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-3 py-4">
                     <div className="flex justify-end gap-2">
                       {p.status !== "REJECTED" && <StockDialog product={p} action={adjustStockAction} />}
                       <EditProductDialog product={p} action={requestProductChangeAction} pending={p.requests.length > 0} />

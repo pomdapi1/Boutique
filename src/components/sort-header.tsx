@@ -22,7 +22,7 @@ export function SortHeader({
   const qs = new URLSearchParams({ ...baseParams, sort: field, dir: nextDir });
   const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
   return (
-    <th className={cn("px-4 py-4 font-semibold text-muted", className)}>
+    <th className={cn("px-3 py-4 font-semibold whitespace-nowrap text-muted", className)}>
       <Link href={`?${qs}`} className="inline-flex items-center gap-1 hover:text-ink">
         {label} <Icon size={14} className={active ? "text-ink" : "opacity-50"} />
       </Link>

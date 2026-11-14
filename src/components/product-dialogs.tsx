@@ -133,9 +133,12 @@ export function EditProductDialog({ product, action, pending }: { product: P; ac
     <Modal
       title={`Modifier — ${product.name}`}
       triggerClassName="btn btn-outline btn-sm"
+      triggerTitle="Modifier"
       trigger={
         <>
-          <Pencil size={16} /> Modifier
+          <Pencil size={16} aria-hidden />
+          {/* Libellé visible sur grand écran ; sinon icône seule (nom accessible conservé) */}
+          <span className="sr-only 2xl:not-sr-only">Modifier</span>
         </>
       }
     >
@@ -161,6 +164,7 @@ export function DeleteProductDialog({ product, status, action }: { product: P; s
     <Modal
       title={`Supprimer « ${product.name} » ?`}
       triggerClassName="btn btn-danger btn-sm px-2"
+      triggerTitle="Supprimer"
       trigger={
         <>
           <Trash2 size={16} aria-hidden />

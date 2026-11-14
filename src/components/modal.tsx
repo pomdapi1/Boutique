@@ -14,6 +14,7 @@ export const useCloseModal = () => useContext(CloseCtx);
 export function Modal({
   trigger,
   triggerClassName,
+  triggerTitle,
   title,
   children,
   wide,
@@ -21,6 +22,8 @@ export function Modal({
 }: {
   trigger: React.ReactNode;
   triggerClassName?: string;
+  /** Info-bulle du bouton déclencheur (utile pour les boutons icône seule). */
+  triggerTitle?: string;
   title: string;
   children: React.ReactNode | ((close: () => void) => React.ReactNode);
   wide?: boolean;
@@ -42,7 +45,7 @@ export function Modal({
 
   return (
     <>
-      <button type="button" className={triggerClassName} onClick={() => setOpen(true)}>
+      <button type="button" className={triggerClassName} title={triggerTitle} onClick={() => setOpen(true)}>
         {trigger}
       </button>
       {open && (
