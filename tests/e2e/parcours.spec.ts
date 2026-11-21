@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import ExcelJS from "exceljs";
 
 // Prérequis : base initialisée avec `npm run seed`.
 
@@ -225,6 +226,67 @@ test("créateur : communication (textes, photos) et kit com déposé par l'admin
   await page.goto("/admin/creators");
   await page.getByRole("link", { name: "Le jardin du crochet" }).click();
   await expect(page.getByText(pitch)).toBeVisible();
+});
+
+test("créateur : export puis import Excel du catalogue (aperçu, confirmation, erreurs)", async ({ page }) => {
+  const stamp = Date.now();
+  await loginOk(page, "crochet@boutique.test", "demo123");
+  await page.goto("/creator/products");
+
+  // Export
+  const res = await page.request.get("/api/products/export");
+  expect(res.status()).toBe(200);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load((await res.body()) as unknown as ArrayBuffer);
+  const ws = wb.getWorksheet("Produits")!;
+  expect(ws.getRow(1).getCell(2).value).toBe("Référence");
+
+  // Modification : +1 sur la ligne « Bague », ajout d'une nouvelle ligne
+  let bagueStock = 0;
+  ws.eachRow((row, n) => {
+    if (n > 1 && row.getCell(3).value === "Bague") {
+      bagueStock = Number(row.getCell(5).value);
+      row.getCell(5).value = bagueStock + 1;
+    }
+  });
+  ws.addRow(["", `xls-${stamp}`, `Produit Excel ${stamp}`, 9.5, 4]);
+  const file = Buffer.from(await wb.xlsx.writeBuffer());
+
+  // Import : aperçu puis confirmation
+  await page.getByRole("button", { name: "Importer (Excel)" }).click();
+  await page.getByLabel("Fichier Excel à importer").setInputFiles({
+    name: "catalogue.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: file,
+  });
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("1 nouveau(x) produit(s)");
+  await expect(dialog).toContainText(`Bague : stock ${bagueStock} → ${bagueStock + 1}`);
+  await dialog.getByRole("button", { name: "Confirmer l'import" }).click();
+  await expect(dialog).toContainText("Import terminé : 1 produit(s) créé(s)");
+  await dialog.getByRole("button", { name: "Voir mon catalogue" }).click();
+
+  const newRow = page.getByRole("row", { name: new RegExp(`Produit Excel ${stamp}`) });
+  await expect(newRow).toContainText(`XLS-${stamp}`);
+  await expect(newRow).toContainText("En attente");
+  await expect(page.getByRole("row", { name: /\bBague\b/ }).getByRole("cell").nth(4)).toHaveText(String(bagueStock + 1));
+
+  // Fichier avec erreurs : rien n'est importé, pas de bouton de confirmation
+  const bad = new ExcelJS.Workbook();
+  const bs = bad.addWorksheet("Produits");
+  bs.addRow(["Identifiant (ne pas modifier)", "Référence", "Nom", "Prix (€)", "Quantité"]);
+  bs.addRow(["", `bad-${stamp}`, "Produit sans prix", "", 1]);
+  bs.addRow(["999", "X-1", "Identifiant inventé", 5, 1]);
+  await page.getByRole("button", { name: "Importer (Excel)" }).click();
+  await page.getByLabel("Fichier Excel à importer").setInputFiles({
+    name: "erreurs.xlsx",
+    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    buffer: Buffer.from(await bad.xlsx.writeBuffer()),
+  });
+  await expect(page.getByRole("dialog")).toContainText("2 erreur(s)");
+  await expect(page.getByRole("dialog")).toContainText("Ligne 2 :");
+  await expect(page.getByRole("dialog")).toContainText("Identifiant 999 inconnu");
+  await expect(page.getByRole("button", { name: "Confirmer l'import" })).toHaveCount(0);
 });
 
 test("un créateur n'accède pas à l'admin", async ({ page }) => {

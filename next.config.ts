@@ -4,7 +4,7 @@ import path from "node:path";
 const nextConfig: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: path.join(__dirname),
-  serverExternalPackages: ["@react-pdf/renderer"],
+  serverExternalPackages: ["@react-pdf/renderer", "exceljs"],
   // pdfkit charge ses polices standard dynamiquement : le traçage du build
   // standalone ne les détecte pas, on les inclut explicitement.
   outputFileTracingIncludes: {

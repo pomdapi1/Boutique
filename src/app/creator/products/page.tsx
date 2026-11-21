@@ -6,7 +6,14 @@ import { PageHeader, StatusBadge, TabLinks, EmptyState, Pill } from "@/component
 import { SearchInput } from "@/components/filters";
 import { SortHeader } from "@/components/sort-header";
 import { CreateProductDialog, DeleteProductDialog, EditProductDialog, StockDialog } from "@/components/product-dialogs";
-import { adjustStockAction, createProductAction, deleteProductAction, requestProductChangeAction } from "@/app/actions/creator";
+import {
+  adjustStockAction,
+  createProductAction,
+  deleteProductAction,
+  importProductsAction,
+  requestProductChangeAction,
+} from "@/app/actions/creator";
+import { ProductExcelActions } from "@/components/product-import";
 
 type SP = Promise<Record<string, string | undefined>>;
 const SORTS = ["reference", "name", "price", "stock", "status"] as const;
@@ -60,7 +67,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
           </>
         }
       />
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <TabLinks
           active={tab}
           tabs={[
@@ -68,6 +75,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
             { key: "rupture", label: "Rupture de stock", href: "?tab=rupture", badge: outOfStock.length },
           ]}
         />
+        <div className="flex flex-wrap gap-2">
+          <ProductExcelActions action={importProductsAction} />
+        </div>
       </div>
 
       {rows.length === 0 ? (
