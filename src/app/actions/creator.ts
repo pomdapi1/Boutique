@@ -10,7 +10,8 @@ import { DocumentError, deleteDocument, saveDocument } from "@/lib/documents";
 import { productLabel } from "@/lib/utils";
 import { normalizeReference } from "@/lib/reference";
 import { charCount, normalizeText } from "@/lib/text";
-import { applyImport, describeUpdate, planImport, readWorkbook } from "@/lib/product-import";
+import { applyImport, describeUpdate, planImport, readWorkbook, uploadedXlsx } from "@/lib/product-import";
+import type { ImportState } from "@/lib/import-state";
 import { BRAND_PITCH_MAX, SALES_NOTES_MAX } from "@/lib/constants";
 import { isReferenceTaken, nextProductCode } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
@@ -215,26 +216,13 @@ export async function deleteDocumentAction(fd: FormData) {
   revalidatePath("/creator/documents");
 }
 
-export type ImportState = {
-  mode?: "preview" | "applied";
-  error?: string;
-  creates?: { line: number; reference: string; name: string; price: string; quantity: number }[];
-  updates?: { line: number; name: string; details: string[] }[];
-  unchanged?: number;
-  errors?: { line: number; message: string }[];
-  result?: { created: number; updated: number; requests: number };
-} | null;
-
 /** Import Excel : mode "preview" (aperçu, rien n'est enregistré) puis "apply" (application). */
 export async function importProductsAction(_p: ImportState, fd: FormData): Promise<ImportState> {
   const { user, creator } = await requireCreator();
-  const file = fd.get("file");
-  if (!(file instanceof File) || file.size === 0) return { error: "Choisissez un fichier Excel (.xlsx)." };
-  if (file.size > 2 * 1024 * 1024) return { error: "Fichier trop volumineux (2 Mo maximum)." };
-  const buf = Buffer.from(await file.arrayBuffer());
-  if (!(buf[0] === 0x50 && buf[1] === 0x4b)) return { error: "Format non reconnu : enregistrez le fichier au format Excel (.xlsx)." };
+  const upload = await uploadedXlsx(fd);
+  if ("error" in upload) return { error: upload.error };
 
-  const { rows, errors } = await readWorkbook(buf);
+  const { rows, errors } = await readWorkbook(upload.buf);
   const plan = await planImport(creator.id, rows, errors);
   const preview: ImportState = {
     mode: "preview",
@@ -246,9 +234,9 @@ export async function importProductsAction(_p: ImportState, fd: FormData): Promi
   if (fd.get("mode") !== "apply" || plan.errors.length) return preview;
   if (plan.creates.length === 0 && plan.updates.length === 0) return { ...preview, error: "Aucune modification à importer." };
 
-  const result = await applyImport(creator, user.id, plan);
+  const { message } = await applyImport(creator, user.id, plan);
   revalidatePath("/creator/products");
-  return { mode: "applied", result };
+  return { mode: "applied", result: { message } };
 }
 
 export async function saveCommunicationTextsAction(_p: ActionState, fd: FormData): Promise<ActionState> {

@@ -264,7 +264,7 @@ test("créateur : export puis import Excel du catalogue (aperçu, confirmation, 
   await expect(dialog).toContainText(`Bague : stock ${bagueStock} → ${bagueStock + 1}`);
   await dialog.getByRole("button", { name: "Confirmer l'import" }).click();
   await expect(dialog).toContainText("Import terminé : 1 produit(s) créé(s)");
-  await dialog.getByRole("button", { name: "Voir mon catalogue" }).click();
+  await dialog.getByRole("button", { name: "Voir le catalogue" }).click();
 
   const newRow = page.getByRole("row", { name: new RegExp(`Produit Excel ${stamp}`) });
   await expect(newRow).toContainText(`XLS-${stamp}`);
@@ -287,6 +287,59 @@ test("créateur : export puis import Excel du catalogue (aperçu, confirmation, 
   await expect(page.getByRole("dialog")).toContainText("Ligne 2 :");
   await expect(page.getByRole("dialog")).toContainText("Identifiant 999 inconnu");
   await expect(page.getByRole("button", { name: "Confirmer l'import" })).toHaveCount(0);
+});
+
+test("admin : export puis import Excel de tout le catalogue, avec avertissement", async ({ page }) => {
+  const stamp = Date.now();
+  const xlsxType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/products?tab=all");
+
+  const res = await page.request.get("/api/admin/products/export");
+  expect(res.status()).toBe(200);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load((await res.body()) as unknown as ArrayBuffer);
+  const ws = wb.getWorksheet("Produits")!;
+  expect(ws.getRow(1).getCell(1).value).toBe("Marque");
+  // Stock de « Print A5 » (Koloro) fixé à 42 + nouveau produit Koloro
+  ws.eachRow((row, n) => {
+    if (n > 1 && row.getCell(1).value === "Koloro" && row.getCell(4).value === "Print A5") row.getCell(6).value = 42;
+  });
+  ws.addRow(["Koloro", "", `adm-${stamp}`, `Produit admin ${stamp}`, 15, 2, "", ""]);
+
+  await page.getByRole("button", { name: "Importer (Excel)" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("Attention : cet import écrase les données des créateurs.");
+  await page.getByLabel("Fichier Excel à importer").setInputFiles({ name: "boutique.xlsx", mimeType: xlsxType, buffer: Buffer.from(await wb.xlsx.writeBuffer()) });
+  await expect(dialog).toContainText("1 nouveau(x) produit(s)");
+  await expect(dialog).toContainText(`Koloro · ADM-${stamp}`);
+  const confirm = dialog.getByRole("button", { name: "Confirmer l'import" });
+  await expect(confirm).toBeDisabled();
+  await dialog.getByRole("checkbox").check();
+  await confirm.click();
+  await expect(dialog).toContainText(/Import terminé : 1 produit\(s\) créé\(s\), \d+ produit\(s\) modifié\(s\), 1 créateur\(s\) notifié\(s\)/);
+  await dialog.getByRole("button", { name: "Voir le catalogue" }).click();
+
+  await page.goto(`/admin/products?tab=all&q=${encodeURIComponent(`Produit admin ${stamp}`)}`);
+  await expect(page.getByRole("row", { name: new RegExp(`Produit admin ${stamp}`) })).toContainText("Actif");
+
+  // Marque inconnue : refusée
+  const bad = new ExcelJS.Workbook();
+  bad.addWorksheet("Produits").addRows([
+    ["Marque", "Identifiant (ne pas modifier)", "Référence", "Nom", "Prix (€)", "Quantité"],
+    ["Marque fantôme", "", "Z-1", "Produit", 5, 1],
+  ]);
+  await page.getByRole("button", { name: "Importer (Excel)" }).click();
+  await page.getByLabel("Fichier Excel à importer").setInputFiles({ name: "bad.xlsx", mimeType: xlsxType, buffer: Buffer.from(await bad.xlsx.writeBuffer()) });
+  await expect(page.getByRole("dialog")).toContainText("Marque « Marque fantôme » inconnue");
+  await expect(page.getByRole("button", { name: "Confirmer l'import" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+
+  // Le créateur est notifié
+  await logout(page);
+  await loginOk(page, "koloro@boutique.test", "demo123");
+  await page.getByRole("button", { name: "Notifications" }).click();
+  await expect(page.getByText("Votre catalogue a été mis à jour par Les Songes Créatifs").first()).toBeVisible();
 });
 
 test("un créateur n'accède pas à l'admin", async ({ page }) => {

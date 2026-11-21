@@ -3,15 +3,25 @@
 import { startTransition, useActionState, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Upload } from "lucide-react";
 import { Modal } from "./modal";
-import type { ImportState } from "@/app/actions/creator";
+import type { ImportState } from "@/lib/import-state";
 
 type ImportAction = (prev: ImportState, fd: FormData) => Promise<ImportState>;
 
-function ImportForm({ action, close }: { action: ImportAction; close: () => void }) {
+type Options = {
+  action: ImportAction;
+  exportHref: string;
+  /** Texte de la 2e étape (ce qu'on peut modifier dans le fichier). */
+  editHint: string;
+  /** Avertissement affiché en tête + case à cocher obligatoire avant confirmation (import admin). */
+  warning?: string;
+};
+
+function ImportForm({ action, exportHref, editHint, warning, close }: Options & { close: () => void }) {
   const [state, dispatch, pending] = useActionState(action, null);
   // Le fichier est gardé en mémoire : React réinitialise les champs d'un <form action> après envoi,
   // ce qui viderait le fichier entre l'aperçu et la confirmation.
   const [file, setFile] = useState<File | null>(null);
+  const [ack, setAck] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const submit = (mode: "preview" | "apply", f: File | null = file) => {
@@ -19,23 +29,20 @@ function ImportForm({ action, close }: { action: ImportAction; close: () => void
     const fd = new FormData();
     fd.append("file", f);
     fd.append("mode", mode);
+    if (ack) fd.append("ack", "1");
     startTransition(() => dispatch(fd));
   };
 
   if (state?.mode === "applied" && state.result) {
-    const r = state.result;
     return (
       <div className="space-y-4">
         <p className="flex gap-3 rounded-xl bg-success-bg p-4 text-success">
           <CheckCircle2 size={20} className="mt-0.5 shrink-0" aria-hidden />
-          <span>
-            Import terminé : {r.created} produit(s) créé(s) (en attente de validation), {r.updated} produit(s) mis à jour
-            {r.requests ? `, dont ${r.requests} modification(s) envoyée(s) pour validation` : ""}.
-          </span>
+          <span>{state.result.message}</span>
         </p>
         <div className="flex justify-end">
           <button type="button" className="btn btn-primary" onClick={close}>
-            Voir mon catalogue
+            Voir le catalogue
           </button>
         </div>
       </div>
@@ -48,15 +55,25 @@ function ImportForm({ action, close }: { action: ImportAction; close: () => void
 
   return (
     <div className="space-y-5">
+      {warning && (
+        <div role="note" className="flex gap-3 rounded-xl border border-danger-100 bg-danger-50 p-4 text-danger-600">
+          <AlertTriangle size={22} className="mt-0.5 shrink-0" aria-hidden />
+          <div>
+            <p className="font-semibold">Attention : cet import écrase les données des créateurs.</p>
+            <p className="mt-1 text-sm">{warning}</p>
+          </div>
+        </div>
+      )}
+
       <ol className="list-decimal space-y-1 pl-5 text-sm text-muted">
         <li>
-          Téléchargez votre catalogue avec{" "}
-          <a href="/api/products/export" className="font-medium text-ink underline">
+          Téléchargez le catalogue avec{" "}
+          <a href={exportHref} className="font-medium text-ink underline">
             Exporter (Excel)
           </a>{" "}
-          : il sert de modèle.
+          : il sert de modèle{warning ? " et de sauvegarde" : ""}.
         </li>
-        <li>Modifiez les lignes ou ajoutez-en (laissez l&apos;identifiant vide pour un nouveau produit).</li>
+        <li>{editHint}</li>
         <li>Importez le fichier : un aperçu s&apos;affiche avant tout enregistrement.</li>
       </ol>
 
@@ -109,11 +126,15 @@ function ImportForm({ action, close }: { action: ImportAction; close: () => void
           )}
           {!!state.creates?.length && (
             <div>
-              <p className="font-semibold">{state.creates.length} nouveau(x) produit(s) — en attente de validation</p>
+              <p className="font-semibold">
+                {state.creates.length} nouveau(x) produit(s){warning ? "" : " — en attente de validation"}
+              </p>
               <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto text-sm text-muted">
                 {state.creates.map((c) => (
                   <li key={c.line}>
+                    {c.brand ? `${c.brand} · ` : ""}
                     {c.reference} · {c.name} · {c.price} · stock {c.quantity}
+                    {c.status ? ` · ${c.status}` : ""}
                   </li>
                 ))}
               </ul>
@@ -136,12 +157,26 @@ function ImportForm({ action, close }: { action: ImportAction; close: () => void
         </div>
       )}
 
+      {warning && hasPreview && !blocked && !nothing && (
+        <label className="flex items-start gap-3 rounded-xl border border-line bg-white p-4 text-sm">
+          <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-0.5 h-4 w-4 accent-danger-600" />
+          <span>
+            J&apos;ai compris que ces modifications remplacent les données saisies par les créateurs, sans validation de leur part.
+          </span>
+        </label>
+      )}
+
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" className="btn btn-outline" onClick={close}>
           Annuler
         </button>
         {hasPreview && !blocked && !nothing && (
-          <button type="button" className="btn btn-primary" disabled={pending} onClick={() => submit("apply")}>
+          <button
+            type="button"
+            className={warning ? "btn btn-danger-solid" : "btn btn-primary"}
+            disabled={pending || (!!warning && !ack)}
+            onClick={() => submit("apply")}
+          >
             <Upload size={16} aria-hidden /> {pending ? "Import en cours…" : "Confirmer l'import"}
           </button>
         )}
@@ -150,14 +185,14 @@ function ImportForm({ action, close }: { action: ImportAction; close: () => void
   );
 }
 
-export function ProductExcelActions({ action }: { action: ImportAction }) {
+export function ProductExcelActions(props: Options & { title?: string }) {
   return (
     <>
-      <a href="/api/products/export" className="btn btn-outline px-4 py-3" title="Télécharger votre catalogue au format Excel">
+      <a href={props.exportHref} className="btn btn-outline px-4 py-3" title="Télécharger le catalogue au format Excel">
         <Download size={18} aria-hidden /> Exporter (Excel)
       </a>
       <Modal
-        title="Importer des produits (Excel)"
+        title={props.title ?? "Importer des produits (Excel)"}
         wide
         triggerClassName="btn btn-outline px-4 py-3"
         trigger={
@@ -166,7 +201,7 @@ export function ProductExcelActions({ action }: { action: ImportAction }) {
           </>
         }
       >
-        {(close) => <ImportForm action={action} close={close} />}
+        {(close) => <ImportForm {...props} close={close} />}
       </Modal>
     </>
   );

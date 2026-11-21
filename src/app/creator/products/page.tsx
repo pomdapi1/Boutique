@@ -76,7 +76,11 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
           ]}
         />
         <div className="flex flex-wrap gap-2">
-          <ProductExcelActions action={importProductsAction} />
+          <ProductExcelActions
+            action={importProductsAction}
+            exportHref="/api/products/export"
+            editHint="Modifiez les lignes ou ajoutez-en (laissez l'identifiant vide pour un nouveau produit)."
+          />
         </div>
       </div>
 

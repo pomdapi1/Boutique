@@ -52,6 +52,37 @@ describe("readProductRows", () => {
   });
 });
 
+describe("readProductRows (mode admin)", () => {
+  const adminHeader = [C.brand, C.code, C.reference, C.name, C.price, C.quantity, C.status, C.sumupName];
+
+  it("lit marque, statut (libellé français) et nom SumUp", () => {
+    const { rows, errors } = readProductRows(
+      [adminHeader, ["Baldck", "1", "bag-01", "Bague", 18, 3, "Archivé", ""], ["Koloro", null, "K-1", "Print", 12, null, null, "001 - Print - Koloro"]],
+      { admin: true },
+    );
+    expect(errors).toEqual([]);
+    expect(rows[0]).toMatchObject({ brand: "Baldck", code: "001", reference: "BAG-01", status: "ARCHIVED", sumupName: null });
+    expect(rows[1]).toMatchObject({ brand: "Koloro", code: null, status: undefined, sumupName: "001 - Print - Koloro" });
+  });
+
+  it("exige la marque et refuse un statut inconnu", () => {
+    const { errors } = readProductRows([adminHeader, [null, null, "A", "Nom", 5, 1, "Validé", null]], { admin: true });
+    expect(errors[0]!.message).toMatch(/Marque manquante.*Statut « Validé » inconnu/);
+  });
+
+  it("autorise la même référence pour deux marques différentes, pas pour la même", () => {
+    const ok = readProductRows([adminHeader, ["A", null, "R-1", "Un", 1, 1], ["B", null, "R-1", "Deux", 1, 1]], { admin: true });
+    expect(ok.errors).toEqual([]);
+    const ko = readProductRows([adminHeader, ["A", null, "R-1", "Un", 1, 1], ["a", null, "r-1", "Deux", 1, 1]], { admin: true });
+    expect(ko.errors[0]!.message).toBe("Référence R-1 en double pour a (déjà ligne 2).");
+  });
+
+  it("exige la colonne Marque", () => {
+    const { errors } = readProductRows([header], { admin: true });
+    expect(errors[0]!.message).toMatch(/Colonnes manquantes : Marque/);
+  });
+});
+
 describe("cellValue", () => {
   it("convertit les formats exceljs", () => {
     expect(cellValue({ richText: [{ text: "Po" }, { text: "t" }] })).toBe("Pot");

@@ -80,7 +80,17 @@ export async function buildProductsWorkbook(creatorId: string, brand: string): P
 
 // ---------- Import ----------
 
-export async function readWorkbook(buf: Buffer): Promise<{ rows: SheetRow[]; errors: SheetError[] }> {
+/** Fichier envoyé par le formulaire d'import : présent, ≤ 2,5 Mo, au format .xlsx (archive ZIP). */
+export async function uploadedXlsx(fd: FormData): Promise<{ buf: Buffer } | { error: string }> {
+  const file = fd.get("file");
+  if (!(file instanceof File) || file.size === 0) return { error: "Choisissez un fichier Excel (.xlsx)." };
+  if (file.size > 2.5 * 1024 * 1024) return { error: "Fichier trop volumineux (2,5 Mo maximum)." };
+  const buf = Buffer.from(await file.arrayBuffer());
+  if (!(buf[0] === 0x50 && buf[1] === 0x4b)) return { error: "Format non reconnu : enregistrez le fichier au format Excel (.xlsx)." };
+  return { buf };
+}
+
+export async function readWorkbook(buf: Buffer, opts: { admin?: boolean } = {}): Promise<{ rows: SheetRow[]; errors: SheetError[] }> {
   const wb = new ExcelJS.Workbook();
   try {
     await wb.xlsx.load(buf as unknown as ArrayBuffer);
@@ -90,12 +100,12 @@ export async function readWorkbook(buf: Buffer): Promise<{ rows: SheetRow[]; err
   const ws = wb.getWorksheet(SHEET_NAME) ?? wb.worksheets[0];
   if (!ws) return { rows: [], errors: [{ line: 0, message: "Le fichier ne contient aucune feuille." }] };
   const matrix: (string | number | null)[][] = [];
-  const width = Math.max(ws.columnCount, 6);
+  const width = Math.max(ws.columnCount, 8);
   ws.eachRow({ includeEmpty: true }, (row, n) => {
     matrix[n - 1] = Array.from({ length: width }, (_, i) => cellValue(row.getCell(i + 1).value));
   });
   for (let i = 0; i < matrix.length; i++) matrix[i] ??= [];
-  return readProductRows(matrix);
+  return readProductRows(matrix, opts);
 }
 
 type Changes = { reference?: string; name?: string; priceCents?: number };
@@ -229,5 +239,8 @@ export async function applyImport(creator: { id: string; name: string }, userId:
       link: "/admin/products",
     });
   }
-  return { created: plan.creates.length, updated: plan.updates.length, requests };
+  const message =
+    `Import terminé : ${plan.creates.length} produit(s) créé(s) (en attente de validation), ${plan.updates.length} produit(s) mis à jour` +
+    (requests ? `, dont ${requests} modification(s) envoyée(s) pour validation.` : ".");
+  return { created: plan.creates.length, updated: plan.updates.length, requests, message };
 }

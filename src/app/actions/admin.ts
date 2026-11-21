@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { hashPassword, requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { parseEurosToCents } from "@/lib/money";
+import { euros, parseEurosToCents } from "@/lib/money";
 import { notifyAllCreators, notifyCreator } from "@/lib/notifications";
 import { SETTING_KEYS, getDefaultCommissionRate, setSetting, sumupConfig } from "@/lib/settings";
 import { assignSaleItem } from "@/lib/sales";
@@ -16,6 +16,10 @@ import { SumUpClient } from "@/lib/sumup/client";
 import { productLabel } from "@/lib/utils";
 import { normalizeReference } from "@/lib/reference";
 import { deleteCreatorFiles } from "@/lib/documents";
+import { readWorkbook, uploadedXlsx } from "@/lib/product-import";
+import { applyAdminImport, describeAdminUpdate, planAdminImport } from "@/lib/product-import-admin";
+import { PRODUCT_STATUS_LABEL } from "@/lib/constants";
+import type { ImportState } from "@/lib/import-state";
 import { isReferenceTaken } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
 
@@ -253,6 +257,38 @@ export async function adminUpdateProductAction(_p: ActionState, fd: FormData): P
   ]);
   revalidatePath("/admin/products");
   return { ok: true, message: "Produit mis à jour." };
+}
+
+/** Import Excel admin de tout le catalogue : aperçu, puis application après acceptation de l'avertissement. */
+export async function importAllProductsAction(_p: ImportState, fd: FormData): Promise<ImportState> {
+  const admin = await requireAdmin();
+  const upload = await uploadedXlsx(fd);
+  if ("error" in upload) return { error: upload.error };
+
+  const { rows, errors } = await readWorkbook(upload.buf, { admin: true });
+  const plan = await planAdminImport(rows, errors);
+  const preview: ImportState = {
+    mode: "preview",
+    creates: plan.creates.map((r) => ({
+      line: r.line,
+      brand: r.creatorName,
+      reference: r.reference,
+      name: r.name,
+      price: euros(r.priceCents),
+      quantity: r.quantity ?? 0,
+      status: PRODUCT_STATUS_LABEL[r.status ?? "ACTIVE"],
+    })),
+    updates: plan.updates.map((u) => ({ line: u.line, name: `${u.creatorName} — ${u.name}`, details: describeAdminUpdate(u) })),
+    unchanged: plan.unchanged,
+    errors: plan.errors,
+  };
+  if (fd.get("mode") !== "apply" || plan.errors.length) return preview;
+  if (fd.get("ack") !== "1") return { ...preview, error: "Cochez la case d'avertissement pour confirmer l'import." };
+  if (plan.creates.length === 0 && plan.updates.length === 0) return { ...preview, error: "Aucune modification à importer." };
+
+  const { message } = await applyAdminImport(admin.id, plan);
+  revalidatePath("/admin", "layout");
+  return { mode: "applied", result: { message } };
 }
 
 // ---------- Ventes ----------

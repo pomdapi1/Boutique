@@ -6,7 +6,14 @@ import { relativeLabel } from "@/lib/dates";
 import { EmptyState, PageHeader, StatusBadge, TabLinks } from "@/components/ui";
 import { ParamSelect, SearchInput } from "@/components/filters";
 import { AdminProductDialog } from "@/components/admin-product-dialog";
-import { adminUpdateProductAction, approveProductAction, decideRequestAction, rejectProductAction } from "@/app/actions/admin";
+import {
+  adminUpdateProductAction,
+  approveProductAction,
+  decideRequestAction,
+  importAllProductsAction,
+  rejectProductAction,
+} from "@/app/actions/admin";
+import { ProductExcelActions } from "@/components/product-import";
 
 type SP = Promise<Record<string, string | undefined>>;
 
@@ -34,7 +41,7 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader title="Produits" subtitle="Validation des nouveaux produits et des demandes de modification." />
-      <div className="mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <TabLinks
           active={tab}
           tabs={[
@@ -42,6 +49,15 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
             { key: "all", label: "Tous les produits", href: "?tab=all" },
           ]}
         />
+        <div className="flex flex-wrap gap-2">
+          <ProductExcelActions
+            action={importAllProductsAction}
+            exportHref="/api/admin/products/export"
+            title="Importer le catalogue de la boutique (Excel)"
+            editHint="Modifiez les lignes ou ajoutez-en : la colonne Marque désigne le créateur ; laissez l'identifiant vide pour un nouveau produit."
+            warning="Les noms, prix, références, stocks, statuts et noms SumUp du fichier remplacent immédiatement ceux saisis par les créateurs, sans passer par leur validation. Les créateurs concernés seront notifiés. Exportez d'abord le catalogue pour garder une sauvegarde."
+          />
+        </div>
       </div>
       {tab === "pending" ? (
         <div className="space-y-8">
