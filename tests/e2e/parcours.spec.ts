@@ -170,6 +170,63 @@ test("créateur : suppression d'un produit avec confirmation", async ({ page }) 
   await expect(page.getByRole("row", { name: new RegExp(name) })).toHaveCount(0);
 });
 
+test("créateur : communication (textes, photos) et kit com déposé par l'admin", async ({ page }) => {
+  const stamp = Date.now();
+  // PNG 1×1 valide et faux PNG (texte)
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
+
+  // Admin : dépôt du kit com (ZIP)
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/settings");
+  await page.getByLabel("Fichier du kit com").setInputFiles({
+    name: `kit-${stamp}.zip`,
+    mimeType: "application/zip",
+    buffer: Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.alloc(64)]),
+  });
+  await expect(page.getByText(/Kit com mis à jour/)).toBeVisible();
+  await logout(page);
+
+  // Créateur : textes
+  await loginOk(page, "crochet@boutique.test", "demo123");
+  await page.goto("/creator/documents");
+  await expect(page.getByRole("heading", { name: "Communication" })).toBeVisible();
+  const pitch = `Marque test ${stamp} 🌸`;
+  await page.getByLabel(/Présentation courte de votre marque/).fill(pitch);
+  await expect(page.getByText(`${Array.from(pitch).length}/300`)).toBeVisible();
+  await page.getByLabel(/Recommandations, spécificités des produits/).fill("Coton.\nLavage à la main.");
+  await page.getByRole("button", { name: "Enregistrer les textes" }).click();
+  await expect(page.getByText("Textes enregistrés.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel(/Présentation courte de votre marque/)).toHaveValue(pitch);
+
+  // Créateur : photo refusée (faux PNG), puis photo valide ajoutée et supprimée
+  await page.getByLabel("Ajouter une photo").setInputFiles({ name: "faux.png", mimeType: "image/png", buffer: Buffer.from("pas une image") });
+  await expect(page.getByText("Format accepté : JPEG ou PNG.")).toBeVisible();
+  const photoName = `photo-${stamp}.png`;
+  await page.getByLabel("Ajouter une photo").setInputFiles({ name: photoName, mimeType: "image/png", buffer: png });
+  await expect(page.getByText(photoName)).toBeVisible();
+  await page.getByRole("button", { name: `Supprimer ${photoName}` }).click();
+  await expect(page.getByText(photoName)).toHaveCount(0);
+
+  // Créateur : téléchargement du kit
+  const kitLink = page.getByRole("link", { name: /Télécharger le kit com/ });
+  await expect(kitLink).toBeVisible();
+  const res = await page.request.get("/api/kit");
+  expect(res.status()).toBe(200);
+  expect(res.headers()["content-disposition"]).toContain(`kit-${stamp}.zip`);
+  await logout(page);
+
+  // Admin : retrait du kit (nettoyage) et texte visible sur la fiche du créateur
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/settings");
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Retirer" }).click();
+  await expect(page.getByText("Kit com retiré.")).toBeVisible();
+  await page.goto("/admin/creators");
+  await page.getByRole("link", { name: "Le jardin du crochet" }).click();
+  await expect(page.getByText(pitch)).toBeVisible();
+});
+
 test("un créateur n'accède pas à l'admin", async ({ page }) => {
   await loginOk(page, "crochet@boutique.test", "demo123");
   await expect(page).toHaveURL(/creator\/boutique/);

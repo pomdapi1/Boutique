@@ -49,6 +49,22 @@ export const DOCUMENT_TYPES: DocumentTypeConfig[] = [
   { type: "INVOICE", label: "Facture mensuelle", max: 3, mimeTypes: PDF, hint: "3 maximum, PDF — max 2 Mo" },
 ];
 
+/** Photos de communication (section « Communication », hors documents administratifs). */
+export const PHOTO_TYPE: DocumentTypeConfig = {
+  type: "PHOTO",
+  label: "Photos",
+  max: 5,
+  mimeTypes: ["image/jpeg", "image/png"],
+  hint: "Merci d'insérer 4 photos de vos produits et une photo de vous si désiré. Merci de compresser vos photos si elles sont trop lourdes. — JPEG ou PNG, 2 Mo max par photo.",
+};
+
+export function findDocumentType(type: string): DocumentTypeConfig | undefined {
+  return type === PHOTO_TYPE.type ? PHOTO_TYPE : DOCUMENT_TYPES.find((t) => t.type === type);
+}
+
+export const BRAND_PITCH_MAX = 300;
+export const SALES_NOTES_MAX = 1500;
+
 export const DEFAULT_COMMISSION_RATE = 0.3;
 // Taux de frais SumUp utilisé uniquement si SumUp ne renvoie pas fee_amount
 // (et pour les ventes simulées). Modifiable dans Admin > Paramètres.

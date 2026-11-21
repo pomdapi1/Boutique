@@ -9,6 +9,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { DocumentsList } from "@/components/documents-list";
 import { resetPasswordAction, updateCreatorAction } from "@/app/actions/admin";
 import { DeleteCreatorButton } from "@/components/delete-creator";
+import { PHOTO_TYPE } from "@/lib/constants";
 
 export default async function CreatorDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,6 +24,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
     },
   });
   if (!creator) notFound();
+  const photos = creator.documents.filter((d) => d.type === PHOTO_TYPE.type);
   const lastMonth = shiftMonth(monthKey(new Date()), -1);
 
   return (
@@ -103,6 +105,41 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
       <h2 className="mb-4 text-xl font-semibold">Documents</h2>
       <div className="mb-10">
         <DocumentsList docs={creator.documents} />
+      </div>
+
+      <h2 className="mb-4 text-xl font-semibold">Communication</h2>
+      <div className="card mb-10 space-y-6 p-6">
+        <div>
+          <h3 className="mb-3 font-semibold">Photos ({photos.length})</h3>
+          {photos.length === 0 ? (
+            <p className="text-sm text-muted italic">Aucune photo déposée.</p>
+          ) : (
+            <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {photos.map((ph) => (
+                <li key={ph.id}>
+                  <a href={`/api/documents/${ph.id}`} target="_blank" rel="noreferrer" className="group block">
+                    {/* eslint-disable-next-line @next/next/no-img-element -- fichier privé servi par l'API authentifiée */}
+                    <img
+                      src={`/api/documents/${ph.id}`}
+                      alt={ph.filename}
+                      loading="lazy"
+                      className="aspect-square w-full rounded-xl border border-line object-cover transition group-hover:opacity-90"
+                    />
+                    <span className="mt-1 block truncate text-xs text-muted">{ph.filename}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <h3 className="mb-1 font-semibold">Présentation courte de la marque</h3>
+          <p className="text-sm whitespace-pre-line">{creator.brandPitch || <span className="text-muted italic">Non renseignée.</span>}</p>
+        </div>
+        <div>
+          <h3 className="mb-1 font-semibold">Recommandations pour les permanences</h3>
+          <p className="text-sm whitespace-pre-line">{creator.salesNotes || <span className="text-muted italic">Non renseignées.</span>}</p>
+        </div>
       </div>
 
       <h2 className="mb-4 text-xl font-semibold">Produits ({creator.products.length})</h2>

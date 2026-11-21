@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/db";
 import { SETTING_KEYS, getCardFeeRate, getDefaultCommissionRate, getSetting, sumupConfig } from "@/lib/settings";
-import { relativeLabel } from "@/lib/dates";
+import { dateLabel, relativeLabel } from "@/lib/dates";
+import { getKit } from "@/lib/kit";
+import { formatSize } from "@/lib/documents";
+import { KitUpload } from "@/components/kit-upload";
+import { BRAND_NAME } from "@/components/brand-logo";
 import { PageHeader, Pill } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { syncNowAction, testSumUpAction, updateSettingsAction } from "@/app/actions/admin";
@@ -16,6 +20,7 @@ export default async function SettingsPage() {
     getSetting(SETTING_KEYS.sumupLastResult),
     prisma.sale.count({ where: { source: "SUMUP" } }),
   ]);
+  const kit = await getKit();
   const result = lastResult ? (JSON.parse(lastResult) as { fetched: number; created: number; refunded: number }) : null;
   const mask = (s: string) => (s ? `${s.slice(0, 6)}…${s.slice(-4)}` : "non défini");
 
@@ -87,6 +92,20 @@ export default async function SettingsPage() {
             <SubmitButton>Enregistrer</SubmitButton>
           </ActionForm>
         </div>
+      </div>
+
+      <div className="card mt-6 p-6">
+        <h2 className="mb-1 text-lg font-semibold">Kit com {BRAND_NAME}</h2>
+        <p className="mb-4 text-sm text-muted">
+          Logos, icônes et posts que les créateurs téléchargent depuis « Mes documents ».
+        </p>
+        <KitUpload
+          kit={
+            kit
+              ? { filename: kit.filename, sizeLabel: formatSize(kit.sizeBytes), uploadedLabel: dateLabel(new Date(kit.uploadedAt)) }
+              : null
+          }
+        />
       </div>
     </div>
   );

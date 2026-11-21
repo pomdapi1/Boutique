@@ -2,7 +2,7 @@ import { mkdir, readFile, rm, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { prisma } from "./db";
-import { DOCUMENT_TYPES, MAX_DOCUMENT_BYTES } from "./constants";
+import { MAX_DOCUMENT_BYTES, findDocumentType } from "./constants";
 
 function uploadDir() {
   return path.resolve(process.env.UPLOAD_DIR ?? "./data/uploads");
@@ -27,13 +27,25 @@ function sniffMime(buf: Buffer): string | null {
 
 export class DocumentError extends Error {}
 
+const FORMAT_NAMES: Record<string, string> = {
+  "application/pdf": "PDF",
+  "image/jpeg": "JPEG",
+  "image/png": "PNG",
+  "image/webp": "WebP",
+};
+
+function formatList(mimes: string[]) {
+  const names = mimes.map((m) => FORMAT_NAMES[m] ?? m);
+  return names.length > 1 ? `${names.slice(0, -1).join(", ")} ou ${names.at(-1)}` : names[0]!;
+}
+
 export async function saveDocument(opts: {
   creatorId: string;
   type: string;
   file: File;
   replaceId?: string | null;
 }) {
-  const cfg = DOCUMENT_TYPES.find((t) => t.type === opts.type);
+  const cfg = findDocumentType(opts.type);
   if (!cfg) throw new DocumentError("Type de document inconnu.");
   if (!opts.file || opts.file.size === 0) throw new DocumentError("Aucun fichier sélectionné.");
   if (opts.file.size > MAX_DOCUMENT_BYTES) throw new DocumentError("Fichier trop volumineux (2 Mo maximum).");
@@ -41,7 +53,7 @@ export async function saveDocument(opts: {
   const buf = Buffer.from(await opts.file.arrayBuffer());
   const mime = sniffMime(buf);
   if (!mime || !cfg.mimeTypes.includes(mime))
-    throw new DocumentError(cfg.mimeTypes.length > 1 ? "Format accepté : PDF ou image." : "Format accepté : PDF.");
+    throw new DocumentError(`Format accepté : ${formatList(cfg.mimeTypes)}.`);
 
   let replaced: { id: string; storedName: string } | null = null;
   if (opts.replaceId) {

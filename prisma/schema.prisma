@@ -32,6 +32,9 @@ model Creator {
   name           String   @unique
   // Nom de la personne (prénom nom) derrière la marque
   ownerName      String?
+  // Communication : présentation courte (300 car.) et conseils pour les permanences (1500 car.)
+  brandPitch     String?
+  salesNotes     String?
   contactEmail   String?
   // Commission Les Songes Créatifs, sur le CA brut (0.30 = 30 %)
   commissionRate Float    @default(0.3)

@@ -9,6 +9,8 @@ import { notifyAdmins } from "@/lib/notifications";
 import { DocumentError, deleteDocument, saveDocument } from "@/lib/documents";
 import { productLabel } from "@/lib/utils";
 import { normalizeReference } from "@/lib/reference";
+import { charCount, normalizeText } from "@/lib/text";
+import { BRAND_PITCH_MAX, SALES_NOTES_MAX } from "@/lib/constants";
 import { isReferenceTaken } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
 
@@ -215,4 +217,18 @@ export async function deleteDocumentAction(fd: FormData) {
   const { creator } = await requireCreator();
   await deleteDocument(String(fd.get("id")), creator.id);
   revalidatePath("/creator/documents");
+}
+
+export async function saveCommunicationTextsAction(_p: ActionState, fd: FormData): Promise<ActionState> {
+  const { creator } = await requireCreator();
+  const pitch = normalizeText(fd.get("brandPitch"));
+  const notes = normalizeText(fd.get("salesNotes"));
+  if (charCount(pitch) > BRAND_PITCH_MAX) return { error: `Présentation trop longue (${BRAND_PITCH_MAX} caractères maximum).` };
+  if (charCount(notes) > SALES_NOTES_MAX) return { error: `Recommandations trop longues (${SALES_NOTES_MAX} caractères maximum).` };
+  await prisma.creator.update({
+    where: { id: creator.id },
+    data: { brandPitch: pitch || null, salesNotes: notes || null },
+  });
+  revalidatePath("/creator/documents");
+  return { ok: true, message: "Textes enregistrés." };
 }
