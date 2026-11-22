@@ -17,6 +17,16 @@ RUN PRISMA_VERSION=$(node -p "require('./node_modules/prisma/package.json').vers
  && npm install --omit=dev --no-audit --no-fund --no-package-lock "prisma@${PRISMA_VERSION}" \
  && node node_modules/prisma/build/index.js --version
 
+# --- Dépendances de production complètes --------------------------------
+# Le traçage du build "standalone" de Next.js oublie certains fichiers chargés
+# dynamiquement (polices de pdfkit, fichiers "module-sync" comme
+# generator-function/require.mjs utilisé par exceljs sous Node 22).
+# On embarque donc toutes les dépendances de production.
+FROM node:22-bookworm-slim AS prod-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+
 # --- Runtime -----------------------------------------------------------
 FROM node:22-bookworm-slim AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates tzdata curl && rm -rf /var/lib/apt/lists/*
@@ -32,6 +42,8 @@ ENV NODE_ENV=production \
 
 RUN groupadd --system app && useradd --system --gid app --home /app app
 
+# 1) dépendances de production complètes, 2) serveur standalone par-dessus
+COPY --from=prod-deps --chown=app:app /app/node_modules ./node_modules
 COPY --from=builder --chown=app:app /app/.next/standalone ./
 COPY --from=builder --chown=app:app /app/.next/static ./.next/static
 COPY --from=builder --chown=app:app /app/prisma ./prisma
