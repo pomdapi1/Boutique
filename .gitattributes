@@ -2,3 +2,4 @@
 # Scripts shell exécutés dans le conteneur Linux : toujours en LF
 *.sh text eol=lf
 *.png binary
+*.woff2 binary
