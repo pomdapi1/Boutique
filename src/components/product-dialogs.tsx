@@ -5,6 +5,7 @@ import { AlertTriangle, ArrowDownUp, Pencil, Plus, Trash2 } from "lucide-react";
 import { Modal } from "./modal";
 import { ActionForm, SubmitButton, type FormAction } from "./action-form";
 import { cn } from "@/lib/utils";
+import { VAT_HINT, VAT_RATES } from "@/lib/constants";
 
 type P = {
   id: string;
@@ -12,6 +13,7 @@ type P = {
   reference: string | null;
   name: string;
   priceCents: number;
+  vatRate: number | null;
   category: string | null;
   stock: number;
 };
@@ -66,7 +68,29 @@ export function StockDialog({ product, action }: { product: P; action: FormActio
   );
 }
 
-function ProductFields({ product, withQuantity }: { product?: P; withQuantity?: boolean }) {
+/** Menu TVA : valeurs acceptées par SumUp (colonne « Tax rate (%) »), vide = non applicable. */
+export function VatSelect({ value, id = "vatRate" }: { value: number | null; id?: string }) {
+  return (
+    <div>
+      <label className="label" htmlFor={id}>
+        TVA
+      </label>
+      <select id={id} name="vatRate" defaultValue={value === null ? "" : String(value)} className="input" aria-describedby={`${id}-hint`}>
+        <option value="">Non applicable (vide)</option>
+        {VAT_RATES.map((r) => (
+          <option key={r} value={String(r)}>
+            {r} %
+          </option>
+        ))}
+      </select>
+      <p id={`${id}-hint`} className="mt-1 text-xs text-muted">
+        {VAT_HINT}
+      </p>
+    </div>
+  );
+}
+
+function ProductFields({ product, withQuantity, defaultVat }: { product?: P; withQuantity?: boolean; defaultVat?: number | null }) {
   return (
     <>
       <div>
@@ -118,6 +142,7 @@ function ProductFields({ product, withQuantity }: { product?: P; withQuantity?: 
           </div>
         )}
       </div>
+      <VatSelect value={product ? product.vatRate : (defaultVat ?? null)} />
       <div>
         <label className="label" htmlFor="category">
           Catégorie
@@ -202,7 +227,7 @@ export function DeleteProductDialog({ product, status, action }: { product: P; s
   );
 }
 
-export function CreateProductDialog({ action }: { action: FormAction }) {
+export function CreateProductDialog({ action, defaultVat }: { action: FormAction; defaultVat: number | null }) {
   return (
     <Modal
       title="Ajouter un produit"
@@ -214,7 +239,7 @@ export function CreateProductDialog({ action }: { action: FormAction }) {
       }
     >
       <ActionForm action={action} resetOnSuccess className="space-y-5">
-        <ProductFields withQuantity />
+        <ProductFields withQuantity defaultVat={defaultVat} />
         <p className="text-sm text-muted">
           Le produit sera « En attente » jusqu&apos;à sa validation par Les Songes Créatifs et son ajout dans la caisse.
         </p>

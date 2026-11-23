@@ -56,6 +56,9 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   await page.getByLabel("Référence produit").fill(reference);
   await page.getByLabel("Nom du produit").fill(name);
   await page.getByLabel("Prix (€)").fill("14,50");
+  // TVA : valeurs SumUp indiquées, 5 % choisi
+  await expect(page.getByText("Valeurs acceptées par SumUp : vide (non applicable), 0 %, 5 %, 10 %, 15 %, 20 %.")).toBeVisible();
+  await page.getByLabel("TVA").selectOption("5");
   await page.getByRole("button", { name: "Ajouter", exact: true }).click();
   await expect(page.getByText(/en attente de validation/)).toBeVisible();
   // Même référence une seconde fois : refusée
@@ -68,6 +71,7 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   const newRow = page.getByRole("row", { name: new RegExp(name) });
   await expect(newRow).toContainText("En attente");
   await expect(newRow).toContainText(reference.toUpperCase());
+  await expect(newRow).toContainText("TVA 5 %");
 
   // Déconnexion → admin valide
   await logout(page);
@@ -267,6 +271,7 @@ test("créateur : export puis import CSV SumUp du catalogue (aperçu, confirmati
   const qty = SUMUP_HEADERS.indexOf("Quantity");
   const bague = rows.find((r) => r[0] === "Le jardin du crochet - Bague")!;
   expect(bague[SUMUP_HEADERS.indexOf("Category")]).toBe("Le jardin du crochet");
+  expect(bague[SUMUP_HEADERS.indexOf("Tax rate (%)")]).toBe("20.00");
   const bagueStock = Number(bague[qty]);
 
   // Modification : +1 sur « Bague », ajout d'une nouvelle ligne
@@ -275,6 +280,7 @@ test("créateur : export puis import CSV SumUp du catalogue (aperçu, confirmati
     sumupLine({
       "Item name": `Le jardin du crochet - Produit CSV ${stamp}`,
       Price: "9.50",
+      "Tax rate (%)": "10.00",
       Quantity: "4",
       SKU: `csv-${stamp}`,
       Category: "Le jardin du crochet",
@@ -293,6 +299,7 @@ test("créateur : export puis import CSV SumUp du catalogue (aperçu, confirmati
 
   const newRow = page.getByRole("row", { name: new RegExp(`Produit CSV ${stamp}`) });
   await expect(newRow).toContainText(`CSV-${stamp}`);
+  await expect(newRow).toContainText("TVA 10 %");
   await expect(newRow).toContainText("En attente");
   await expect(page.getByRole("row", { name: /\bBague\b/ }).getByRole("cell").nth(4)).toHaveText(String(bagueStock + 1));
 

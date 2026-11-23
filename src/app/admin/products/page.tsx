@@ -1,3 +1,4 @@
+import { vatLabel } from "@/lib/constants";
 import { Check, X } from "lucide-react";
 import { prisma } from "@/lib/db";
 import { euros } from "@/lib/money";
@@ -17,12 +18,13 @@ import { ProductCsvActions } from "@/components/product-import";
 
 type SP = Promise<Record<string, string | undefined>>;
 
-function describeChanges(raw: string, p: { reference: string | null; name: string; priceCents: number; category: string | null }) {
-  const c = JSON.parse(raw) as { reference?: string; name?: string; priceCents?: number; category?: string };
+function describeChanges(raw: string, p: { reference: string | null; name: string; priceCents: number; vatRate: number | null; category: string | null }) {
+  const c = JSON.parse(raw) as { reference?: string; name?: string; priceCents?: number; vatRate?: number | null; category?: string };
   const out: string[] = [];
   if (c.reference !== undefined) out.push(`Référence : ${p.reference ?? "—"} → ${c.reference}`);
   if (c.name !== undefined) out.push(`Nom : « ${p.name} » → « ${c.name} »`);
   if (c.priceCents !== undefined) out.push(`Prix : ${euros(p.priceCents)} → ${euros(c.priceCents)}`);
+  if (c.vatRate !== undefined) out.push(`TVA : ${vatLabel(p.vatRate).replace("TVA ", "")} → ${vatLabel(c.vatRate).replace("TVA ", "")}`);
   if (c.category !== undefined) out.push(`Catégorie : ${p.category ?? "—"} → ${c.category}`);
   return out;
 }

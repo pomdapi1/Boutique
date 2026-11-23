@@ -11,6 +11,8 @@ import { euros } from "./money";
 import { normalize } from "./attribution";
 import { nextProductCode } from "./products";
 import { notifyCreator } from "./notifications";
+import { getDefaultVatRate } from "./settings";
+import { vatLabel } from "./constants";
 import { effectiveItemName, productsToSumUpCsv } from "./product-import";
 import { norm, productNameFromItemName, type SheetError, type SheetRow } from "./product-sheet";
 
@@ -30,6 +32,7 @@ type AdminChanges = {
   reference?: string;
   name?: string;
   priceCents?: number;
+  vatRate?: number | null;
   sumupName?: string;
   sumupItemId?: string;
   sumupVariantId?: string;
@@ -118,6 +121,7 @@ export async function planAdminImport(rows: SheetRow[], parseErrors: SheetError[
     if (r.reference !== product.reference) changes.reference = r.reference;
     if (name !== product.name) changes.name = name;
     if (r.priceCents !== product.priceCents) changes.priceCents = r.priceCents;
+    if (r.vatRate !== undefined && r.vatRate !== product.vatRate) changes.vatRate = r.vatRate;
     // Nom d'article de la caisse : enregistré s'il diffère du nom effectif après changement de nom
     const effective = effectiveItemName({ name: changes.name ?? product.name, sumupName: product.sumupName }, creator.name);
     if (normalize(r.itemName) !== normalize(effective)) changes.sumupName = r.itemName;
@@ -150,6 +154,7 @@ export function describeAdminUpdate(u: AdminImportPlan["updates"][number]): stri
   if (c.reference) out.push(`référence → ${c.reference}`);
   if (c.name) out.push(`nom → « ${c.name} »`);
   if (c.priceCents !== undefined) out.push(`prix → ${euros(c.priceCents)}`);
+  if (c.vatRate !== undefined) out.push(vatLabel(c.vatRate).replace("TVA ", "TVA → "));
   if (c.sumupName) out.push(`nom dans la caisse → « ${c.sumupName} »`);
   if (c.sumupItemId || c.sumupVariantId) out.push("identifiants SumUp enregistrés");
   return out;
@@ -163,6 +168,7 @@ export async function applyAdminImport(adminId: string, plan: AdminImportPlan) {
     v[k]++;
     perCreator.set(id, v);
   };
+  const defaultVat = await getDefaultVatRate();
   // Codes internes : suite de chaque créateur
   const nextCode = new Map<string, number>();
   for (const r of plan.creates)
@@ -180,6 +186,7 @@ export async function applyAdminImport(adminId: string, plan: AdminImportPlan) {
           reference: r.reference,
           name: r.name,
           priceCents: r.priceCents,
+          vatRate: r.vatRate !== undefined ? r.vatRate : defaultVat,
           stock: r.quantity ?? 0,
           category: r.creatorName,
           status: "ACTIVE",

@@ -14,6 +14,7 @@ import { decodeText, parseCsv, toCsv } from "./csv";
 import { nextProductCode } from "./products";
 import { notifyAdmins } from "./notifications";
 import { getDefaultVatRate } from "./settings";
+import { vatLabel } from "./constants";
 import {
   norm,
   productNameFromItemName,
@@ -30,6 +31,7 @@ type ExportProduct = {
   name: string;
   reference: string | null;
   priceCents: number;
+  vatRate: number | null;
   stock: number;
   status: string;
   sumupName: string | null;
@@ -38,8 +40,7 @@ type ExportProduct = {
 };
 
 /** CSV au format SumUp (importable tel quel dans la caisse). */
-export async function productsToSumUpCsv(items: { product: ExportProduct; brand: string }[]): Promise<string> {
-  const vatRate = await getDefaultVatRate();
+export function productsToSumUpCsv(items: { product: ExportProduct; brand: string }[]): string {
   return toCsv([
     [...SUMUP_HEADERS],
     ...items.map(({ product: p, brand }) =>
@@ -50,7 +51,7 @@ export async function productsToSumUpCsv(items: { product: ExportProduct; brand:
         priceCents: p.priceCents,
         stock: p.stock,
         visible: p.status === "ACTIVE",
-        vatRate,
+        vatRate: p.vatRate,
         itemId: p.sumupItemId,
         variantId: p.sumupVariantId,
       }),
@@ -85,7 +86,7 @@ export function effectiveItemName(p: { name: string; sumupName: string | null },
   return p.sumupName ?? canonicalSumupName({ name: p.name, creatorName: brand });
 }
 
-type Changes = { reference?: string; name?: string; priceCents?: number };
+type Changes = { reference?: string; name?: string; priceCents?: number; vatRate?: number | null };
 type TechChanges = { sumupItemId?: string; sumupVariantId?: string };
 
 export type ImportPlan = {
@@ -144,6 +145,7 @@ export async function planImport(creator: { id: string; name: string }, rows: Sh
     if (r.reference !== product.reference) changes.reference = r.reference;
     if (name !== product.name) changes.name = name;
     if (r.priceCents !== product.priceCents) changes.priceCents = r.priceCents;
+    if (r.vatRate !== undefined && r.vatRate !== product.vatRate) changes.vatRate = r.vatRate;
     const tech: TechChanges = {};
     if (r.itemId && r.itemId !== product.sumupItemId) tech.sumupItemId = r.itemId;
     if (r.variantId && r.variantId !== product.sumupVariantId) tech.sumupVariantId = r.variantId;
@@ -170,6 +172,7 @@ export function describeUpdate(u: ImportPlan["updates"][number]): string[] {
   if (c.reference) out.push(`référence → ${c.reference}`);
   if (c.name) out.push(`nom → « ${c.name} »`);
   if (c.priceCents !== undefined) out.push(`prix → ${euros(c.priceCents)}`);
+  if (c.vatRate !== undefined) out.push(vatLabel(c.vatRate).replace("TVA ", "TVA → "));
   if (Object.keys(c).length && u.status !== "PENDING") out[out.length - 1] += " (soumis à validation)";
   if (Object.keys(u.tech).length) out.push("identifiants SumUp enregistrés");
   return out;
@@ -179,6 +182,7 @@ export async function applyImport(creator: { id: string; name: string }, userId:
   if (plan.errors.length) throw new Error("Le fichier contient des erreurs : rien n'a été importé.");
   let requests = 0;
   const base = parseInt(await nextProductCode(creator.id), 10);
+  const defaultVat = await getDefaultVatRate();
   await prisma.$transaction(async (tx) => {
     for (const [i, r] of plan.creates.entries()) {
       const p = await tx.product.create({
@@ -188,6 +192,7 @@ export async function applyImport(creator: { id: string; name: string }, userId:
           reference: r.reference,
           name: r.name,
           priceCents: r.priceCents,
+          vatRate: r.vatRate !== undefined ? r.vatRate : defaultVat,
           stock: r.quantity ?? 0,
           category: creator.name,
           status: "PENDING",

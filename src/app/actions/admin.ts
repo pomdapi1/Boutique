@@ -18,7 +18,7 @@ import { normalizeReference } from "@/lib/reference";
 import { deleteCreatorFiles } from "@/lib/documents";
 import { readCsv, uploadedCsv } from "@/lib/product-import";
 import { applyAdminImport, describeAdminUpdate, planAdminImport } from "@/lib/product-import-admin";
-import { PRODUCT_STATUS_LABEL } from "@/lib/constants";
+import { PRODUCT_STATUS_LABEL, VAT_HINT, VAT_RATES, parseVatRate } from "@/lib/constants";
 import type { ImportState } from "@/lib/import-state";
 import { isReferenceTaken } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
@@ -224,6 +224,8 @@ export async function adminUpdateProductAction(_p: ActionState, fd: FormData): P
   if (name.length < 2) return { error: "Nom trop court." };
   const status = String(fd.get("status"));
   if (!["PENDING", "ACTIVE", "REJECTED", "ARCHIVED"].includes(status)) return { error: "Statut invalide." };
+  const vat = parseVatRate(fd.get("vatRate"));
+  if ("error" in vat) return { error: vat.error };
   // Référence facultative côté admin (produits anciens sans référence), mais validée si renseignée.
   let reference: string | null = null;
   if (String(fd.get("reference") ?? "").trim()) {
@@ -241,6 +243,7 @@ export async function adminUpdateProductAction(_p: ActionState, fd: FormData): P
         reference,
         name,
         priceCents,
+        vatRate: vat.value,
         stock: stock.data,
         status,
         category: String(fd.get("category") ?? "").trim() || null,
@@ -371,7 +374,11 @@ export async function deleteNotificationAction(fd: FormData) {
 export async function updateSettingsAction(_p: ActionState, fd: FormData): Promise<ActionState> {
   await requireAdmin();
   const parsed = z
-    .object({ defaultCommission: pct, cardFeeRate: z.coerce.number().min(0).max(10), vatRate: z.coerce.number().min(0).max(100) })
+    .object({
+      defaultCommission: pct,
+      cardFeeRate: z.coerce.number().min(0).max(10),
+      vatRate: z.coerce.number().refine((n) => (VAT_RATES as readonly number[]).includes(n), { message: `TVA par défaut : ${VAT_HINT}` }),
+    })
     .safeParse(Object.fromEntries(fd));
   if (!parsed.success) return fail(parsed.error);
   await setSetting(SETTING_KEYS.defaultCommissionRate, String(parsed.data.defaultCommission / 100));

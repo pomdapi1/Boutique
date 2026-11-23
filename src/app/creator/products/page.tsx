@@ -1,6 +1,7 @@
 import { requireCreator } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { euros } from "@/lib/money";
+import { getDefaultVatRate } from "@/lib/settings";
 import { normalize } from "@/lib/attribution";
 import { PageHeader, StatusBadge, TabLinks, EmptyState, Pill } from "@/components/ui";
 import { SearchInput } from "@/components/filters";
@@ -26,6 +27,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
   const dir = sp.dir === "desc" ? "desc" : "asc";
   const q = sp.q ?? "";
 
+  const defaultVat = await getDefaultVatRate();
   const all = await prisma.product.findMany({
     where: { creatorId: creator.id, status: { not: "ARCHIVED" } },
     include: { requests: { where: { status: "PENDING" }, select: { id: true } } },
@@ -63,7 +65,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
         actions={
           <>
             <SearchInput value={q} placeholder="Produit ou référence…" />
-            <CreateProductDialog action={createProductAction} />
+            <CreateProductDialog action={createProductAction} defaultVat={defaultVat} />
           </>
         }
       />
@@ -107,7 +109,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                     {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
                   </td>
                   <td className="px-3 py-4">{p.name}</td>
-                  <td className="px-3 py-4 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
+                  <td className="px-3 py-4 text-right whitespace-nowrap">
+                    {euros(p.priceCents)}
+                    <div className="text-xs text-muted">{p.vatRate === null ? "TVA n/a" : `TVA ${p.vatRate} %`}</div>
+                  </td>
                   <td className="px-3 py-4">{creator.name}</td>
                   <td className={`px-3 py-4 text-right font-medium ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
                   <td className="px-3 py-4">

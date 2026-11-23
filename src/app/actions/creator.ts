@@ -12,7 +12,7 @@ import { normalizeReference } from "@/lib/reference";
 import { charCount, normalizeText } from "@/lib/text";
 import { applyImport, describeUpdate, planImport, readCsv, uploadedCsv } from "@/lib/product-import";
 import type { ImportState } from "@/lib/import-state";
-import { BRAND_PITCH_MAX, SALES_NOTES_MAX } from "@/lib/constants";
+import { BRAND_PITCH_MAX, SALES_NOTES_MAX, parseVatRate } from "@/lib/constants";
 import { isReferenceTaken, nextProductCode } from "@/lib/products";
 import type { ActionState } from "@/components/action-form";
 
@@ -68,6 +68,8 @@ export async function createProductAction(_p: ActionState, fd: FormData): Promis
   if ("error" in ref) return { error: ref.error };
   const priceCents = parseEurosToCents(parsed.data.price);
   if (priceCents === null || priceCents <= 0) return { error: "Prix invalide." };
+  const vat = parseVatRate(fd.get("vatRate"));
+  if ("error" in vat) return { error: vat.error };
   const qty = z.coerce.number().int().min(0).max(10000).safeParse(fd.get("quantity") || 0);
   if (!qty.success) return { error: "Quantité invalide." };
   const taken = await isReferenceTaken(creator.id, ref.value);
@@ -81,6 +83,7 @@ export async function createProductAction(_p: ActionState, fd: FormData): Promis
       reference: ref.value,
       name: parsed.data.name,
       priceCents,
+      vatRate: vat.value,
       category: parsed.data.category || creator.name,
       stock: qty.data,
       status: "PENDING",
@@ -116,8 +119,10 @@ export async function requestProductChangeAction(_p: ActionState, fd: FormData):
   if ("error" in ref) return { error: ref.error };
   const priceCents = parseEurosToCents(parsed.data.price);
   if (priceCents === null || priceCents <= 0) return { error: "Prix invalide." };
+  const vat = parseVatRate(fd.get("vatRate"));
+  if ("error" in vat) return { error: vat.error };
 
-  const changes: Record<string, string | number> = {};
+  const changes: Record<string, string | number | null> = {};
   if (ref.value !== product.reference) {
     const taken = await isReferenceTaken(creator.id, ref.value, product.id);
     if (taken) return { error: taken };
@@ -125,6 +130,7 @@ export async function requestProductChangeAction(_p: ActionState, fd: FormData):
   }
   if (parsed.data.name !== product.name) changes.name = parsed.data.name;
   if (priceCents !== product.priceCents) changes.priceCents = priceCents;
+  if (vat.value !== product.vatRate) changes.vatRate = vat.value;
   if ((parsed.data.category || null) !== product.category && parsed.data.category) changes.category = parsed.data.category;
   if (Object.keys(changes).length === 0) return { error: "Aucune modification." };
 

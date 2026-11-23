@@ -8,6 +8,7 @@
  */
 import { parseEurosToCents } from "./money";
 import { normalizeReference } from "./reference";
+import { parseVatRate } from "./constants";
 
 /** En-têtes exacts du modèle CSV d'articles SumUp, dans l'ordre. */
 export const SUMUP_HEADERS = [
@@ -72,6 +73,8 @@ export type SheetRow = {
   reference: string; // colonne SKU, normalisée
   priceCents: number;
   quantity: number | null; // null = stock non suivi ou cellule vide (inchangé)
+  /** Tax rate (%) : taux, null = non applicable (cellule vide), undefined = colonne absente (inchangé). */
+  vatRate?: number | null;
   itemId: string | null;
   variantId: string | null;
 };
@@ -90,6 +93,7 @@ const COLS = {
   itemName: "Item name",
   variations: "Variations",
   price: "Price",
+  vatRate: "Tax rate (%)",
   track: "Track inventory? (Yes/No)",
   quantity: "Quantity",
   sku: "SKU",
@@ -104,6 +108,7 @@ type ColKey = keyof typeof COLS;
 const ALIASES: Record<string, ColKey> = {
   nom: "itemName",
   prix: "price",
+  tva: "vatRate",
   quantite: "quantity",
   stock: "quantity",
   reference: "sku",
@@ -179,6 +184,13 @@ export function readProductRows(rows: string[][], opts: { admin?: boolean } = {}
       else quantity = q;
     }
 
+    let vatRate: number | null | undefined;
+    if (col.vatRate !== undefined) {
+      const v = parseVatRate(get("vatRate"));
+      if ("error" in v) lineErrors.push(`Tax rate (%) : ${v.error}`);
+      else vatRate = v.value;
+    }
+
     if (lineErrors.length) errors.push({ line, message: lineErrors.join(" ") });
     else
       out.push({
@@ -188,6 +200,7 @@ export function readProductRows(rows: string[][], opts: { admin?: boolean } = {}
         reference: (ref as { value: string }).value,
         priceCents: priceCents!,
         quantity,
+        ...(vatRate !== undefined ? { vatRate } : {}),
         itemId: get("itemId") || null,
         variantId: get("variantId") || null,
       });
@@ -219,7 +232,7 @@ export function sumupCsvRow(p: {
   priceCents: number;
   stock: number;
   visible: boolean;
-  vatRate: number;
+  vatRate: number | null;
   itemId: string | null;
   variantId: string | null;
 }): string[] {
@@ -228,7 +241,7 @@ export function sumupCsvRow(p: {
     "Is variation visible? (Yes/No)": "Yes",
     Price: (p.priceCents / 100).toFixed(2),
     "Variable price? (Yes/No)": "No",
-    "Tax rate (%)": p.vatRate.toFixed(2),
+    "Tax rate (%)": p.vatRate === null ? "" : p.vatRate.toFixed(2),
     "On sale in Online Store?": "No",
     "Set up different prices and VAT for takeaway": "No",
     Unit: "each.each",

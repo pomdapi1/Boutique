@@ -61,6 +61,23 @@ export function findDocumentType(type: string): DocumentTypeConfig | undefined {
   return type === PHOTO_TYPE.type ? PHOTO_TYPE : DOCUMENT_TYPES.find((t) => t.type === type);
 }
 
+/** Taux de TVA acceptés par SumUp (colonne « Tax rate (%) ») ; null = non applicable. */
+export const VAT_RATES = [0, 5, 10, 15, 20] as const;
+export const VAT_HINT = "Valeurs acceptées par SumUp : vide (non applicable), 0 %, 5 %, 10 %, 15 %, 20 %.";
+
+export function vatLabel(rate: number | null): string {
+  return rate === null ? "TVA non applicable" : `TVA ${rate} %`;
+}
+
+/** Valeur saisie (formulaire ou CSV) → taux autorisé, null (non applicable) ou erreur. "" = non applicable. */
+export function parseVatRate(input: unknown): { value: number | null } | { error: string } {
+  const raw = String(input ?? "").trim().replace("%", "").replace(",", ".").trim();
+  if (raw === "") return { value: null };
+  const n = Number(raw);
+  if (!Number.isFinite(n) || !(VAT_RATES as readonly number[]).includes(n)) return { error: `TVA « ${String(input).trim()} » refusée. ${VAT_HINT}` };
+  return { value: n };
+}
+
 export const BRAND_PITCH_MAX = 300;
 export const SALES_NOTES_MAX = 1500;
 

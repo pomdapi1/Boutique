@@ -4,6 +4,7 @@ import { Pencil } from "lucide-react";
 import { Modal } from "./modal";
 import { ActionForm, SubmitButton, type FormAction } from "./action-form";
 import { PRODUCT_STATUS_LABEL } from "@/lib/constants";
+import { VatSelect } from "./product-dialogs";
 
 type P = {
   id: string;
@@ -11,6 +12,7 @@ type P = {
   reference: string | null;
   name: string;
   priceCents: number;
+  vatRate: number | null;
   category: string | null;
   stock: number;
   status: string;
@@ -62,6 +64,7 @@ export function AdminProductDialog({ product, action }: { product: P; action: Fo
             <input name="stock" type="number" min={0} defaultValue={product.stock} required className="input" />
           </div>
         </div>
+        <VatSelect value={product.vatRate} id={`vat-${product.id}`} />
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="label">Catégorie</label>

@@ -1,3 +1,4 @@
+import { VAT_RATES } from "@/lib/constants";
 import { prisma } from "@/lib/db";
 import { SETTING_KEYS, getCardFeeRate, getDefaultCommissionRate, getDefaultVatRate, getSetting, sumupConfig } from "@/lib/settings";
 import { dateLabel, relativeLabel } from "@/lib/dates";
@@ -91,10 +92,16 @@ export default async function SettingsPage() {
             </div>
             <div>
               <label className="label" htmlFor="vatRate">
-                Taux de TVA des exports CSV SumUp (%)
+                TVA par défaut des nouveaux produits (%)
               </label>
-              <input id="vatRate" name="vatRate" type="number" step="0.1" min={0} max={100} defaultValue={vatRate} className="input" />
-              <p className="mt-1 text-xs text-muted">Colonne « Tax rate (%) » des fichiers produits exportés pour la caisse SumUp.</p>
+              <select id="vatRate" name="vatRate" defaultValue={String(vatRate)} className="input">
+                {VAT_RATES.map((r) => (
+                  <option key={r} value={String(r)}>
+                    {r} %
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-muted">Pré-remplie à l'ajout d'un produit et utilisée à l'import CSV si la colonne « Tax rate (%) » est absente. Chaque produit a ensuite sa propre TVA.</p>
             </div>
             <SubmitButton>Enregistrer</SubmitButton>
           </ActionForm>

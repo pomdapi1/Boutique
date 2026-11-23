@@ -19,6 +19,7 @@ describe("readProductRows (CSV SumUp)", () => {
       reference: "PC001",
       priceCents: 900,
       quantity: 17,
+      vatRate: 20,
       itemId: "7126258a-ad57-4e2c-942d-f97ff75af774",
       variantId: "f7922f8e-3db3-4f8e-8b7d-09b191029476",
     });
@@ -64,6 +65,22 @@ describe("readProductRows (CSV SumUp)", () => {
     expect(errors.map((e) => e.message)).toEqual(["SKU R1 en double (déjà ligne 2).", "Item id en double (déjà ligne 2)."]);
   });
 
+  it("Tax rate (%) : vide = non applicable, valeurs SumUp acceptées, autres refusées", () => {
+    const { rows, errors } = readProductRows([
+      ["Item name", "Price", "SKU", "Tax rate (%)"],
+      ["A - Un", "5", "A1", ""],
+      ["A - Deux", "5", "A2", "10.00"],
+      ["A - Trois", "5", "A3", "5.5"],
+    ]);
+    expect(rows.map((r) => r.vatRate)).toEqual([null, 10]);
+    expect(errors[0]!.message).toMatch(/Tax rate.*5\.5.*vide \(non applicable\), 0 %, 5 %, 10 %, 15 %, 20 %/);
+  });
+
+  it("colonne Tax rate absente : TVA inchangée (undefined)", () => {
+    const { rows } = readProductRows([["Item name", "Price", "SKU"], ["A - Un", "5", "A1"]]);
+    expect(rows[0]!.vatRate).toBeUndefined();
+  });
+
   it("refuse un fichier sans les colonnes obligatoires", () => {
     expect(readProductRows([["Nom", "Prix"]]).errors[0]!.message).toMatch(/Colonnes manquantes : SKU/);
   });
@@ -83,6 +100,11 @@ describe("productNameFromItemName", () => {
 });
 
 describe("sumupCsvRow", () => {
+  it("TVA non applicable : colonne Tax rate vide", () => {
+    const row = sumupCsvRow({ itemName: "A - B", brand: "A", reference: "R", priceCents: 100, stock: 1, visible: true, vatRate: null, itemId: null, variantId: null });
+    expect(row[SUMUP_HEADERS.indexOf("Tax rate (%)")]).toBe("");
+  });
+
   it("produit une ligne identique au format de l'exemple SumUp", () => {
     const row = sumupCsvRow({
       itemName: "P'TITE CREVETTE - Maxi Chouchou",

@@ -100,7 +100,7 @@ async function main() {
     },
   });
   for (const [code, name, price, stock] of CROCHET) {
-    await prisma.product.create({ data: { creatorId: crochet.id, code, reference: `CRO-${code}`, name, priceCents: price * 100, stock, status: "ACTIVE", category: crochet.name } });
+    await prisma.product.create({ data: { creatorId: crochet.id, code, reference: `CRO-${code}`, name, priceCents: price * 100, vatRate: 20, stock, status: "ACTIVE", category: crochet.name } });
   }
 
   for (const [i, c] of OTHERS.entries()) {
@@ -121,6 +121,7 @@ async function main() {
           reference: `${c.slug.slice(0, 4).toUpperCase()}-${String(j + 1).padStart(2, "0")}`,
           name,
           priceCents: Math.round(price * 100),
+          vatRate: 20,
           stock: 5 + Math.floor(rand() * 40),
           status: "ACTIVE",
           category: c.name,
@@ -215,7 +216,7 @@ async function main() {
 
   console.log("Demandes, documents, notifications…");
   await prisma.product.create({
-    data: { creatorId: crochet.id, code: "024", reference: "CRO-LYS", name: "Fleurs en tige (lys)", priceCents: 2200, stock: 4, status: "PENDING", category: crochet.name },
+    data: { creatorId: crochet.id, code: "024", reference: "CRO-LYS", name: "Fleurs en tige (lys)", priceCents: 2200, vatRate: 20, stock: 4, status: "PENDING", category: crochet.name },
   });
   const pivoine = await prisma.product.findFirstOrThrow({ where: { creatorId: crochet.id, code: "019" } });
   await prisma.productRequest.create({
