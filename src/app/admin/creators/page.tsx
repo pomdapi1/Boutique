@@ -29,7 +29,7 @@ export default async function CreatorsPage() {
   ]);
   const grossMap = new Map(payouts.map((p) => [p.creator.id, p.computed.grossCents]));
   const allProducts = new Map(productCounts.map((g) => [g.creatorId, g._count]));
-  const required = DOCUMENT_TYPES.filter((t) => t.type !== "INVOICE");
+  const required = DOCUMENT_TYPES;
 
   return (
     <div className="mx-auto max-w-6xl">

@@ -145,7 +145,7 @@ model Document {
   id         String   @id @default(cuid())
   creatorId  String
   creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  type       String // RIB | RC_PRO | KBIS | INVOICE
+  type       String // RIB | RC_PRO | KBIS | PHOTO (INVOICE : ancien type, plus proposé)
   filename   String
   storedName String
   sizeBytes  Int

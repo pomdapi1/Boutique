@@ -322,7 +322,7 @@ export async function closeMonthAction(fd: FormData) {
     await notifyCreator(r.creator.id, {
       kind: "CLOSING",
       title: `Clôture de ${monthLabel(month)}`,
-      body: "Téléchargez votre relevé de ventes en PDF et déposez votre facture mensuelle.",
+      body: "Votre relevé de ventes du mois est disponible : téléchargez-le en PDF depuis « Mes ventes ».",
       link: `/creator/sales?m=${month}`,
     });
   }

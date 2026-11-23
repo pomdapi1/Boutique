@@ -194,6 +194,11 @@ test("créateur : communication (textes, photos) et kit com déposé par l'admin
   await loginOk(page, "crochet@boutique.test", "demo123");
   await page.goto("/creator/documents");
   await expect(page.getByRole("heading", { name: "Communication" })).toBeVisible();
+  // Rubrique « Facture mensuelle » retirée
+  await expect(page.getByText("Facture mensuelle")).toHaveCount(0);
+  // Textes d'origine, remis en place à la fin du test
+  const pitchBefore = await page.getByLabel(/Présentation courte de votre marque/).inputValue();
+  const notesBefore = await page.getByLabel(/Recommandations, spécificités des produits/).inputValue();
   const pitch = `Marque test ${stamp} 🌸`;
   await page.getByLabel(/Présentation courte de votre marque/).fill(pitch);
   await expect(page.getByText(`${Array.from(pitch).length}/300`)).toBeVisible();
@@ -228,7 +233,17 @@ test("créateur : communication (textes, photos) et kit com déposé par l'admin
   await expect(page.getByText("Kit com retiré.")).toBeVisible();
   await page.goto("/admin/creators");
   await page.getByRole("link", { name: "Le jardin du crochet" }).click();
+  await page.waitForURL(/\/admin\/creators\/[^/]+$/, { timeout: 30_000 }); // compilation à la volée en mode dev
   await expect(page.getByText(pitch)).toBeVisible();
+
+  // Nettoyage : textes d'origine du créateur
+  await logout(page);
+  await loginOk(page, "crochet@boutique.test", "demo123");
+  await page.goto("/creator/documents");
+  await page.getByLabel(/Présentation courte de votre marque/).fill(pitchBefore);
+  await page.getByLabel(/Recommandations, spécificités des produits/).fill(notesBefore);
+  await page.getByRole("button", { name: "Enregistrer les textes" }).click();
+  await expect(page.getByText("Textes enregistrés.")).toBeVisible();
 });
 
 test("créateur : export puis import Excel du catalogue (aperçu, confirmation, erreurs)", async ({ page }) => {

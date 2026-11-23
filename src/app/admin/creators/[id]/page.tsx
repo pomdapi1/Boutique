@@ -25,6 +25,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
   });
   if (!creator) notFound();
   const photos = creator.documents.filter((d) => d.type === PHOTO_TYPE.type);
+  const invoices = creator.documents.filter((d) => d.type === "INVOICE");
   const lastMonth = shiftMonth(monthKey(new Date()), -1);
 
   return (
@@ -105,6 +106,23 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
       <h2 className="mb-4 text-xl font-semibold">Documents</h2>
       <div className="mb-10">
         <DocumentsList docs={creator.documents} />
+        {invoices.length > 0 && (
+          // Ancienne rubrique « Facture mensuelle », retirée de l'espace créateur : les fichiers déjà déposés restent consultables.
+          <section className="card mt-6 p-6">
+            <h3 className="mb-1 font-semibold">Factures mensuelles déposées (ancienne rubrique)</h3>
+            <p className="mb-3 text-sm text-muted">Cette rubrique n&apos;est plus proposée aux créateurs ; les fichiers déjà déposés restent consultables ici.</p>
+            <ul className="space-y-1 text-sm">
+              {invoices.map((d) => (
+                <li key={d.id}>
+                  <a href={`/api/documents/${d.id}`} target="_blank" rel="noreferrer" className="underline">
+                    {d.filename}
+                  </a>{" "}
+                  <span className="text-muted">— {d.createdAt.toLocaleDateString("fr-FR")}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <h2 className="mb-4 text-xl font-semibold">Communication</h2>

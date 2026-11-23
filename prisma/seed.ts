@@ -235,7 +235,7 @@ async function main() {
   await prisma.notification.createMany({
     data: [
       { kind: "PRODUCT", title: "Changements du " + days(5).toLocaleDateString("fr-FR").slice(0, 5), body: "Vous pouvez maintenant enlever du stock : cliquez pour découvrir ce qui change.", link: "/creator/products", createdAt: days(5) },
-      { kind: "CLOSING", title: `Clôture du mois précédent`, body: "Téléchargez votre relevé de ventes en PDF et déposez votre facture mensuelle.", link: `/creator/sales?m=${shiftMonth(current, -1)}`, createdAt: days(7) },
+      { kind: "CLOSING", title: `Clôture du mois précédent`, body: "Votre relevé de ventes du mois est disponible : téléchargez-le en PDF depuis « Mes ventes ».", link: `/creator/sales?m=${shiftMonth(current, -1)}`, createdAt: days(7) },
       { kind: "STOCK_OUT", creatorId: crochet.id, title: "1 nouveau produit en rupture de stock", body: "023 - Chien saucisse - Le jardin du crochet", link: "/creator/products?tab=rupture", createdAt: days(24) },
       { kind: "INFO", title: "Donnez-nous votre avis sur l'app", body: "Vos retours nous aident à améliorer votre espace. Quelques minutes suffisent pour répondre.", createdAt: days(30) },
       { kind: "PRODUCT", forAdmin: true, title: "Nouveau produit à valider", body: "024 - Fleurs en tige (lys) — Le jardin du crochet", link: "/admin/products", createdAt: days(1) },

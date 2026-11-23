@@ -46,7 +46,6 @@ export const DOCUMENT_TYPES: DocumentTypeConfig[] = [
   { type: "RIB", label: "RIB", max: 1, mimeTypes: PDF_IMG, hint: "1 maximum, PDF ou image — max 2 Mo" },
   { type: "RC_PRO", label: "RC Pro", max: 1, mimeTypes: PDF, hint: "1 maximum, PDF — max 2 Mo" },
   { type: "KBIS", label: "Justificatif d'immatriculation", max: 1, mimeTypes: PDF, hint: "1 maximum, PDF — max 2 Mo" },
-  { type: "INVOICE", label: "Facture mensuelle", max: 3, mimeTypes: PDF, hint: "3 maximum, PDF — max 2 Mo" },
 ];
 
 /** Photos de communication (section « Communication », hors documents administratifs). */
