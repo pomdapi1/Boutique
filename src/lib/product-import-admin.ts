@@ -1,84 +1,42 @@
 /**
- * Import / export Excel de tout le catalogue de la boutique (admin).
+ * Import / export CSV SumUp de tout le catalogue de la boutique (admin).
  * Contrairement à l'import créateur, les changements s'appliquent DIRECTEMENT
  * (pas de demande de validation) et écrasent les données saisies par les créateurs.
  * Chaque créateur concerné reçoit une notification récapitulative.
+ *
+ * Marque d'une ligne : colonne Category, sinon début de l'Item name (« Marque - Nom »).
  */
-import ExcelJS from "exceljs";
 import { prisma } from "./db";
-import { PRODUCT_STATUS_LABEL } from "./constants";
 import { euros } from "./money";
+import { normalize } from "./attribution";
 import { nextProductCode } from "./products";
 import { notifyCreator } from "./notifications";
-import { norm, SHEET_COLUMNS, type SheetError, type SheetRow } from "./product-sheet";
+import { effectiveItemName, productsToSumUpCsv } from "./product-import";
+import { norm, productNameFromItemName, type SheetError, type SheetRow } from "./product-sheet";
 
 // ---------- Export ----------
 
-export async function buildAdminProductsWorkbook(): Promise<Buffer> {
+export async function buildAdminProductsCsv(): Promise<string> {
   const products = await prisma.product.findMany({
     include: { creator: { select: { name: true } } },
     orderBy: [{ creator: { name: "asc" } }, { name: "asc" }],
   });
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "Les Songes Créatifs";
-  const ws = wb.addWorksheet("Produits", { views: [{ state: "frozen", ySplit: 1 }] });
-  ws.columns = [
-    { header: SHEET_COLUMNS.brand, key: "brand", width: 24 },
-    { header: SHEET_COLUMNS.code, key: "code", width: 26 },
-    { header: SHEET_COLUMNS.reference, key: "reference", width: 18 },
-    { header: SHEET_COLUMNS.name, key: "name", width: 36 },
-    { header: SHEET_COLUMNS.price, key: "price", width: 11, style: { numFmt: "0.00" } },
-    { header: SHEET_COLUMNS.quantity, key: "quantity", width: 11 },
-    { header: SHEET_COLUMNS.status, key: "status", width: 13 },
-    { header: SHEET_COLUMNS.sumupName, key: "sumupName", width: 44 },
-  ];
-  for (const p of products) {
-    ws.addRow({
-      brand: p.creator.name,
-      code: p.code,
-      reference: p.reference ?? "",
-      name: p.name,
-      price: p.priceCents / 100,
-      quantity: p.stock,
-      status: PRODUCT_STATUS_LABEL[p.status] ?? p.status,
-      sumupName: p.sumupName ?? "",
-    });
-  }
-  ws.getColumn("code").font = { color: { argb: "FF8A8D80" } };
-  const head = ws.getRow(1);
-  head.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  head.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF626850" } };
-
-  const help = wb.addWorksheet("Mode d'emploi");
-  help.getColumn(1).width = 110;
-  [
-    "Catalogue complet de la boutique — mode d'emploi (administrateur)",
-    "",
-    "⚠ L'import admin écrase les données saisies par les créateurs, sans passer par leur validation.",
-    "",
-    "• Marque : nom exact de la marque du créateur (obligatoire).",
-    "• Identifiant : ne le modifiez pas. Laissez-le vide pour créer un nouveau produit pour la marque indiquée.",
-    "• Référence : obligatoire, unique par marque.",
-    "• Nom et Prix (€) : obligatoires.",
-    "• Quantité : stock en boutique. Vide = stock inchangé.",
-    "• Statut : Actif, En attente, Refusé ou Archivé. Vide = inchangé (Actif pour un nouveau produit).",
-    "• Nom dans la caisse SumUp : vide = nom par défaut « Identifiant - Nom - Marque ».",
-    "• Les produits absents du fichier ne sont pas modifiés (l'import ne supprime rien).",
-  ].forEach((t, i) => {
-    const c = help.getCell(i + 1, 1);
-    c.value = t;
-    if (i === 0) c.font = { bold: true, size: 14 };
-    if (i === 2) c.font = { bold: true, color: { argb: "FFB93A36" } };
-  });
-  return Buffer.from(await wb.xlsx.writeBuffer());
+  return productsToSumUpCsv(products.map((product) => ({ product, brand: product.creator.name })));
 }
 
 // ---------- Import ----------
 
-type AdminChanges = { reference?: string; name?: string; priceCents?: number; status?: string; sumupName?: string | null };
+type AdminChanges = {
+  reference?: string;
+  name?: string;
+  priceCents?: number;
+  sumupName?: string;
+  sumupItemId?: string;
+  sumupVariantId?: string;
+};
 
 export type AdminImportPlan = {
-  creates: (SheetRow & { creatorId: string; creatorName: string })[];
+  creates: (SheetRow & { name: string; creatorId: string; creatorName: string })[];
   updates: {
     line: number;
     productId: string;
@@ -100,30 +58,54 @@ export async function planAdminImport(rows: SheetRow[], parseErrors: SheetError[
     prisma.product.findMany(),
   ]);
   const creatorByName = new Map(creators.map((c) => [norm(c.name), c]));
-  const byCode = new Map(products.map((p) => [`${p.creatorId}|${p.code}`, p]));
+  const creatorById = new Map(creators.map((c) => [c.id, c]));
+  const byItemId = new Map(products.filter((p) => p.sumupItemId).map((p) => [p.sumupItemId!, p]));
   const byRef = new Map(products.filter((p) => p.reference).map((p) => [`${p.creatorId}|${p.reference}`, p]));
+  const byItemName = new Map(products.map((p) => [`${p.creatorId}|${normalize(effectiveItemName(p, creatorById.get(p.creatorId)?.name ?? ""))}`, p]));
+
+  /** Marque : colonne Category, sinon début de l'Item name (« Marque - Nom », la marque pouvant contenir « - »). */
+  function findCreator(r: SheetRow) {
+    if (r.brand) return creatorByName.get(norm(r.brand));
+    const seps = [...r.itemName.matchAll(/\s+[-–—]\s+/g)];
+    for (const m of seps) {
+      const c = creatorByName.get(norm(r.itemName.slice(0, m.index)));
+      if (c) return c;
+    }
+    return undefined;
+  }
 
   const plan: AdminImportPlan = { creates: [], updates: [], unchanged: 0, errors };
   const touched = new Set<string>();
 
   for (const r of rows) {
-    const creator = creatorByName.get(norm(r.brand ?? ""));
+    const creator = findCreator(r);
     if (!creator) {
-      errors.push({ line: r.line, message: `Marque « ${r.brand} » inconnue : créez d'abord le créateur, ou corrigez l'orthographe.` });
+      errors.push({
+        line: r.line,
+        message: r.brand
+          ? `Marque « ${r.brand} » (colonne Category) inconnue : créez d'abord le créateur, ou corrigez l'orthographe.`
+          : "Marque introuvable : renseignez la colonne Category ou nommez l'article « Marque - Nom ».",
+      });
       continue;
     }
-    const product = r.code ? byCode.get(`${creator.id}|${r.code}`) : byRef.get(`${creator.id}|${r.reference}`);
-    if (r.code && !product) {
-      errors.push({ line: r.line, message: `Identifiant ${r.code} inconnu pour ${creator.name} : ne modifiez pas cette colonne.` });
+    const name = productNameFromItemName(r.itemName, creator.name);
+    if (name.length < 2 || name.length > 120) {
+      errors.push({ line: r.line, message: "Nom du produit manquant ou trop long (120 caractères maximum) après la marque." });
       continue;
     }
+    const byId = r.itemId ? byItemId.get(r.itemId) : undefined;
+    if (byId && byId.creatorId !== creator.id) {
+      errors.push({ line: r.line, message: `L'Item id appartient à un produit de « ${creatorById.get(byId.creatorId)?.name} » : ne modifiez pas cette colonne.` });
+      continue;
+    }
+    const product = byId ?? byRef.get(`${creator.id}|${r.reference}`) ?? byItemName.get(`${creator.id}|${normalize(r.itemName)}`);
     const owner = byRef.get(`${creator.id}|${r.reference}`);
     if (owner && owner.id !== product?.id) {
-      errors.push({ line: r.line, message: `La référence ${r.reference} est déjà utilisée par « ${owner.name} » (${creator.name}).` });
+      errors.push({ line: r.line, message: `La référence (SKU) ${r.reference} est déjà utilisée par « ${owner.name} » (${creator.name}).` });
       continue;
     }
     if (!product) {
-      plan.creates.push({ ...r, creatorId: creator.id, creatorName: creator.name });
+      plan.creates.push({ ...r, name, creatorId: creator.id, creatorName: creator.name });
       continue;
     }
     if (touched.has(product.id)) {
@@ -134,10 +116,13 @@ export async function planAdminImport(rows: SheetRow[], parseErrors: SheetError[
 
     const changes: AdminChanges = {};
     if (r.reference !== product.reference) changes.reference = r.reference;
-    if (r.name !== product.name) changes.name = r.name;
+    if (name !== product.name) changes.name = name;
     if (r.priceCents !== product.priceCents) changes.priceCents = r.priceCents;
-    if (r.status && r.status !== product.status) changes.status = r.status;
-    if (r.sumupName !== undefined && r.sumupName !== product.sumupName) changes.sumupName = r.sumupName;
+    // Nom d'article de la caisse : enregistré s'il diffère du nom effectif après changement de nom
+    const effective = effectiveItemName({ name: changes.name ?? product.name, sumupName: product.sumupName }, creator.name);
+    if (normalize(r.itemName) !== normalize(effective)) changes.sumupName = r.itemName;
+    if (r.itemId && r.itemId !== product.sumupItemId) changes.sumupItemId = r.itemId;
+    if (r.variantId && r.variantId !== product.sumupVariantId) changes.sumupVariantId = r.variantId;
     const stockTo = r.quantity !== null && r.quantity !== product.stock ? r.quantity : null;
     if (stockTo === null && Object.keys(changes).length === 0) {
       plan.unchanged++;
@@ -165,8 +150,8 @@ export function describeAdminUpdate(u: AdminImportPlan["updates"][number]): stri
   if (c.reference) out.push(`référence → ${c.reference}`);
   if (c.name) out.push(`nom → « ${c.name} »`);
   if (c.priceCents !== undefined) out.push(`prix → ${euros(c.priceCents)}`);
-  if (c.status) out.push(`statut → ${PRODUCT_STATUS_LABEL[c.status] ?? c.status}`);
-  if (c.sumupName !== undefined) out.push(c.sumupName ? `nom SumUp → « ${c.sumupName} »` : "nom SumUp → par défaut");
+  if (c.sumupName) out.push(`nom dans la caisse → « ${c.sumupName} »`);
+  if (c.sumupItemId || c.sumupVariantId) out.push("identifiants SumUp enregistrés");
   return out;
 }
 
@@ -178,30 +163,33 @@ export async function applyAdminImport(adminId: string, plan: AdminImportPlan) {
     v[k]++;
     perCreator.set(id, v);
   };
+  // Codes internes : suite de chaque créateur
+  const nextCode = new Map<string, number>();
+  for (const r of plan.creates)
+    if (!nextCode.has(r.creatorId)) nextCode.set(r.creatorId, parseInt(await nextProductCode(r.creatorId), 10));
 
   await prisma.$transaction(async (tx) => {
-    // Codes internes : suite de chaque créateur
-    const nextCode = new Map<string, number>();
     for (const r of plan.creates) {
-      if (!nextCode.has(r.creatorId)) nextCode.set(r.creatorId, parseInt(await nextProductCode(r.creatorId), 10));
       const n = nextCode.get(r.creatorId)!;
       nextCode.set(r.creatorId, n + 1);
-      const code = String(n).padStart(3, "0");
+      const isDefaultName = normalize(r.itemName) === normalize(effectiveItemName({ name: r.name, sumupName: null }, r.creatorName));
       const p = await tx.product.create({
         data: {
           creatorId: r.creatorId,
-          code,
+          code: String(n).padStart(3, "0"),
           reference: r.reference,
           name: r.name,
           priceCents: r.priceCents,
           stock: r.quantity ?? 0,
           category: r.creatorName,
-          status: r.status ?? "ACTIVE",
-          sumupName: r.sumupName ?? null,
+          status: "ACTIVE",
+          sumupName: isDefaultName ? null : r.itemName,
+          sumupItemId: r.itemId,
+          sumupVariantId: r.variantId,
         },
       });
       if (p.stock > 0)
-        await tx.stockMovement.create({ data: { productId: p.id, delta: p.stock, reason: "RESTOCK", note: "Stock initial (import Excel admin)", userId: adminId } });
+        await tx.stockMovement.create({ data: { productId: p.id, delta: p.stock, reason: "RESTOCK", note: "Stock initial (import CSV admin)", userId: adminId } });
       bump(r.creatorId, "created");
     }
 
@@ -210,7 +198,7 @@ export async function applyAdminImport(adminId: string, plan: AdminImportPlan) {
       if (u.stockTo !== null) {
         data.stock = u.stockTo;
         await tx.stockMovement.create({
-          data: { productId: u.productId, delta: u.stockTo - u.stockFrom, reason: "CORRECTION", note: "Import Excel admin", userId: adminId },
+          data: { productId: u.productId, delta: u.stockTo - u.stockFrom, reason: "CORRECTION", note: "Import CSV admin", userId: adminId },
         });
       }
       await tx.product.update({ where: { id: u.productId }, data });

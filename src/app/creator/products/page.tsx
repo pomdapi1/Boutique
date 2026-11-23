@@ -13,7 +13,7 @@ import {
   importProductsAction,
   requestProductChangeAction,
 } from "@/app/actions/creator";
-import { ProductExcelActions } from "@/components/product-import";
+import { ProductCsvActions } from "@/components/product-import";
 
 type SP = Promise<Record<string, string | undefined>>;
 const SORTS = ["reference", "name", "price", "stock", "status"] as const;
@@ -76,10 +76,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
           ]}
         />
         <div className="flex flex-wrap gap-2">
-          <ProductExcelActions
+          <ProductCsvActions
             action={importProductsAction}
             exportHref="/api/products/export"
-            editHint="Modifiez les lignes ou ajoutez-en (laissez l'identifiant vide pour un nouveau produit)."
+            editHint="Modifiez les lignes ou ajoutez-en : Item name « Votre marque - Nom du produit », SKU = votre référence ; laissez Item id vide pour un nouveau produit."
           />
         </div>
       </div>

@@ -4,6 +4,7 @@ import { DEFAULT_CARD_FEE_RATE, DEFAULT_COMMISSION_RATE } from "./constants";
 export const SETTING_KEYS = {
   defaultCommissionRate: "defaultCommissionRate",
   cardFeeRate: "cardFeeRate",
+  defaultVatRate: "defaultVatRate",
   sumupLastSyncAt: "sumup.lastSyncAt",
   sumupLastRunAt: "sumup.lastRunAt",
   sumupLastError: "sumup.lastError",
@@ -33,6 +34,9 @@ export const getDefaultCommissionRate = () =>
   getNumber(SETTING_KEYS.defaultCommissionRate, DEFAULT_COMMISSION_RATE);
 
 export const getCardFeeRate = () => getNumber(SETTING_KEYS.cardFeeRate, DEFAULT_CARD_FEE_RATE);
+
+/** Taux de TVA (en %) écrit dans la colonne « Tax rate (%) » des exports CSV SumUp. */
+export const getDefaultVatRate = () => getNumber(SETTING_KEYS.defaultVatRate, 20);
 
 export function sumupConfig() {
   return {

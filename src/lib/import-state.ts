@@ -1,4 +1,4 @@
-/** État renvoyé par les actions d'import Excel (créateur et admin) à la fenêtre d'import. */
+/** État renvoyé par les actions d'import CSV SumUp (créateur et admin) à la fenêtre d'import. */
 export type ImportState = {
   mode?: "preview" | "applied";
   error?: string;

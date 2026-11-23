@@ -13,7 +13,7 @@ import {
   importAllProductsAction,
   rejectProductAction,
 } from "@/app/actions/admin";
-import { ProductExcelActions } from "@/components/product-import";
+import { ProductCsvActions } from "@/components/product-import";
 
 type SP = Promise<Record<string, string | undefined>>;
 
@@ -50,12 +50,12 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
           ]}
         />
         <div className="flex flex-wrap gap-2">
-          <ProductExcelActions
+          <ProductCsvActions
             action={importAllProductsAction}
             exportHref="/api/admin/products/export"
-            title="Importer le catalogue de la boutique (Excel)"
-            editHint="Modifiez les lignes ou ajoutez-en : la colonne Marque désigne le créateur ; laissez l'identifiant vide pour un nouveau produit."
-            warning="Les noms, prix, références, stocks, statuts et noms SumUp du fichier remplacent immédiatement ceux saisis par les créateurs, sans passer par leur validation. Les créateurs concernés seront notifiés. Exportez d'abord le catalogue pour garder une sauvegarde."
+            title="Importer le catalogue de la boutique (CSV SumUp)"
+            editHint="Modifiez les lignes ou ajoutez-en : la colonne Category (ou le début de l'Item name « Marque - Nom ») désigne le créateur ; laissez Item id vide pour un nouveau produit."
+            warning="Les noms, prix, références (SKU), stocks et noms d'articles de la caisse du fichier remplacent immédiatement ceux saisis par les créateurs, sans passer par leur validation. Les nouveaux produits sont créés « Actifs ». Les créateurs concernés seront notifiés. Exportez d'abord le catalogue pour garder une sauvegarde."
           />
         </div>
       </div>

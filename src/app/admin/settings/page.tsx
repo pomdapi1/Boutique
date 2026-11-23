@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { SETTING_KEYS, getCardFeeRate, getDefaultCommissionRate, getSetting, sumupConfig } from "@/lib/settings";
+import { SETTING_KEYS, getCardFeeRate, getDefaultCommissionRate, getDefaultVatRate, getSetting, sumupConfig } from "@/lib/settings";
 import { dateLabel, relativeLabel } from "@/lib/dates";
 import { getKit } from "@/lib/kit";
 import { formatSize } from "@/lib/documents";
@@ -20,7 +20,7 @@ export default async function SettingsPage() {
     getSetting(SETTING_KEYS.sumupLastResult),
     prisma.sale.count({ where: { source: "SUMUP" } }),
   ]);
-  const kit = await getKit();
+  const [kit, vatRate] = await Promise.all([getKit(), getDefaultVatRate()]);
   const result = lastResult ? (JSON.parse(lastResult) as { fetched: number; created: number; refunded: number }) : null;
   const mask = (s: string) => (s ? `${s.slice(0, 6)}…${s.slice(-4)}` : "non défini");
 
@@ -88,6 +88,13 @@ export default async function SettingsPage() {
               <p className="mt-1 text-xs text-muted">
                 Utilisé seulement si SumUp ne fournit pas les frais réels d&apos;une transaction, et pour les ventes simulées.
               </p>
+            </div>
+            <div>
+              <label className="label" htmlFor="vatRate">
+                Taux de TVA des exports CSV SumUp (%)
+              </label>
+              <input id="vatRate" name="vatRate" type="number" step="0.1" min={0} max={100} defaultValue={vatRate} className="input" />
+              <p className="mt-1 text-xs text-muted">Colonne « Tax rate (%) » des fichiers produits exportés pour la caisse SumUp.</p>
             </div>
             <SubmitButton>Enregistrer</SubmitButton>
           </ActionForm>

@@ -10,7 +10,7 @@ import { DocumentError, deleteDocument, saveDocument } from "@/lib/documents";
 import { productLabel } from "@/lib/utils";
 import { normalizeReference } from "@/lib/reference";
 import { charCount, normalizeText } from "@/lib/text";
-import { applyImport, describeUpdate, planImport, readWorkbook, uploadedXlsx } from "@/lib/product-import";
+import { applyImport, describeUpdate, planImport, readCsv, uploadedCsv } from "@/lib/product-import";
 import type { ImportState } from "@/lib/import-state";
 import { BRAND_PITCH_MAX, SALES_NOTES_MAX } from "@/lib/constants";
 import { isReferenceTaken, nextProductCode } from "@/lib/products";
@@ -216,14 +216,14 @@ export async function deleteDocumentAction(fd: FormData) {
   revalidatePath("/creator/documents");
 }
 
-/** Import Excel : mode "preview" (aperçu, rien n'est enregistré) puis "apply" (application). */
+/** Import CSV SumUp : mode "preview" (aperçu, rien n'est enregistré) puis "apply" (application). */
 export async function importProductsAction(_p: ImportState, fd: FormData): Promise<ImportState> {
   const { user, creator } = await requireCreator();
-  const upload = await uploadedXlsx(fd);
+  const upload = await uploadedCsv(fd);
   if ("error" in upload) return { error: upload.error };
 
-  const { rows, errors } = await readWorkbook(upload.buf);
-  const plan = await planImport(creator.id, rows, errors);
+  const { rows, errors } = readCsv(upload.text);
+  const plan = await planImport(creator, rows, errors);
   const preview: ImportState = {
     mode: "preview",
     creates: plan.creates.map((r) => ({ line: r.line, reference: r.reference, name: r.name, price: euros(r.priceCents), quantity: r.quantity ?? 0 })),

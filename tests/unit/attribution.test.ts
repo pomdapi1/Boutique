@@ -44,6 +44,18 @@ describe("buildMatcher", () => {
     expect(match("999 - Nouveau - Baldck")).toEqual({ product: null, creatorId: "c3" });
   });
 
+  it("convention SumUp « Marque - Nom » (casse, accents, tirets indifférents)", () => {
+    expect(canonicalSumupName({ name: "Sticker fleur", creatorName: "Sarradeuxairs" })).toBe("Sarradeuxairs - Sticker fleur");
+    expect(match("SARRADEUXAIRS – sticker fleur").product?.id).toBe("p2");
+    expect(match("Le jardin du crochet - Pot de fleurs (petit)").product?.id).toBe("p1");
+    expect(match("Baldck - Produit inconnu")).toEqual({ product: null, creatorId: "c3" });
+  });
+
+  it("marque contenant elle-même un tiret", () => {
+    const m = buildMatcher([{ id: "x", code: "001", name: "Bougie", sumupName: null, creatorId: "cx", creatorName: "Atelier - Paulette" }]);
+    expect(m("Atelier - Paulette - Bougie").product?.id).toBe("x");
+  });
+
   it("libellé inconnu : non attribué", () => {
     expect(match("Porte clef moyen crochet")).toEqual({ product: null, creatorId: null });
   });

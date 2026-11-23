@@ -69,19 +69,23 @@ function ImportForm({ action, exportHref, editHint, warning, close }: Options & 
         <li>
           Téléchargez le catalogue avec{" "}
           <a href={exportHref} className="font-medium text-ink underline">
-            Exporter (Excel)
+            Exporter (CSV SumUp)
           </a>{" "}
           : il sert de modèle{warning ? " et de sauvegarde" : ""}.
         </li>
         <li>{editHint}</li>
         <li>Importez le fichier : un aperçu s&apos;affiche avant tout enregistrement.</li>
       </ol>
+      <p className="text-xs text-muted">
+        Format : modèle CSV d&apos;articles SumUp (Item name « Marque - Nom », Price, Quantity, SKU = référence, Category = marque). Avec Excel :
+        ouvrez le fichier via Données › À partir d&apos;un fichier texte/CSV, puis enregistrez-le en « CSV UTF-8 ». Les variantes SumUp ne sont pas gérées.
+      </p>
 
       <input
         ref={inputRef}
         type="file"
-        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        aria-label="Fichier Excel à importer"
+        accept=".csv,text/csv"
+        aria-label="Fichier CSV à importer"
         className="hidden"
         onChange={(e) => {
           const f = e.currentTarget.files?.[0] ?? null;
@@ -97,7 +101,7 @@ function ImportForm({ action, exportHref, editHint, warning, close }: Options & 
         className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-5 text-muted transition hover:border-sage-400 hover:bg-sage-50 hover:text-ink disabled:opacity-60"
       >
         <FileSpreadsheet size={20} aria-hidden />
-        {pending ? "Analyse du fichier…" : (file?.name ?? "Choisir un fichier Excel (.xlsx)")}
+        {pending ? "Analyse du fichier…" : (file?.name ?? "Choisir un fichier CSV (format SumUp)")}
       </button>
 
       {state?.error && (
@@ -185,19 +189,19 @@ function ImportForm({ action, exportHref, editHint, warning, close }: Options & 
   );
 }
 
-export function ProductExcelActions(props: Options & { title?: string }) {
+export function ProductCsvActions(props: Options & { title?: string }) {
   return (
     <>
-      <a href={props.exportHref} className="btn btn-outline px-4 py-3" title="Télécharger le catalogue au format Excel">
-        <Download size={18} aria-hidden /> Exporter (Excel)
+      <a href={props.exportHref} className="btn btn-outline px-4 py-3" title="Télécharger le catalogue au format CSV SumUp (importable dans la caisse)">
+        <Download size={18} aria-hidden /> Exporter (CSV SumUp)
       </a>
       <Modal
-        title={props.title ?? "Importer des produits (Excel)"}
+        title={props.title ?? "Importer des produits (CSV SumUp)"}
         wide
         triggerClassName="btn btn-outline px-4 py-3"
         trigger={
           <>
-            <Upload size={18} aria-hidden /> Importer (Excel)
+            <Upload size={18} aria-hidden /> Importer (CSV SumUp)
           </>
         }
       >

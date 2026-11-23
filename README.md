@@ -68,7 +68,7 @@ Les tests e2e ajoutent des produits « Produit e2e … » : relancez `npm run se
 1. Dans le tableau de bord SumUp : *Développeurs › Clés API* → créez une **clé secrète** (`sk_…`). Notez votre **code marchand** (*Profil*).
 2. Dans `.env` : `SUMUP_MODE="live"`, `SUMUP_API_KEY="sk_…"`, `SUMUP_MERCHANT_CODE="…"`.
 3. `npm run dev`, puis *Admin › Paramètres & SumUp* › **Tester la connexion** puis **Synchroniser maintenant** (ou `npm run sumup:sync`). Ensuite la synchro tourne toute seule (`SUMUP_SYNC_INTERVAL_SECONDS`).
-4. Nommez les articles de la caisse SumUp au format `NNN - Nom - Créateur` (le nom attendu est affiché lors de la validation d'un produit).
+4. Nommez les articles de la caisse SumUp au format `Marque - Nom` (le nom attendu est affiché lors de la validation d'un produit ; l'ancien format `NNN - Nom - Marque` reste reconnu). Le plus simple : *Admin › Produits › Exporter (CSV SumUp)* produit un fichier importable directement dans la caisse SumUp.
 
 > La première synchro importe les `SUMUP_INITIAL_DAYS` derniers jours. Une base de démo contient des ventes fictives : pour un test réel, partez d'une base vide (`npx prisma migrate reset --skip-seed`) et créez les créateurs / produits correspondant à votre caisse.
 

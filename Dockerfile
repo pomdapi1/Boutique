@@ -20,7 +20,7 @@ RUN PRISMA_VERSION=$(node -p "require('./node_modules/prisma/package.json').vers
 # --- Dépendances de production complètes --------------------------------
 # Le traçage du build "standalone" de Next.js oublie certains fichiers chargés
 # dynamiquement (polices de pdfkit, fichiers "module-sync" comme
-# generator-function/require.mjs utilisé par exceljs sous Node 22).
+# generator-function/require.mjs sous Node 22).
 # On embarque donc toutes les dépendances de production.
 FROM node:22-bookworm-slim AS prod-deps
 WORKDIR /app

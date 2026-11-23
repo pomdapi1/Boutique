@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
-import ExcelJS from "exceljs";
+import { parseCsv, toCsv } from "../../src/lib/csv";
+import { SUMUP_HEADERS } from "../../src/lib/product-sheet";
 
 // Prérequis : base initialisée avec `npm run seed`.
 
@@ -246,37 +247,43 @@ test("créateur : communication (textes, photos) et kit com déposé par l'admin
   await expect(page.getByText("Textes enregistrés.")).toBeVisible();
 });
 
-test("créateur : export puis import Excel du catalogue (aperçu, confirmation, erreurs)", async ({ page }) => {
+/** Ligne CSV SumUp minimale (autres colonnes vides) à partir de quelques valeurs. */
+function sumupLine(values: Partial<Record<(typeof SUMUP_HEADERS)[number], string>>) {
+  return SUMUP_HEADERS.map((h) => values[h] ?? "");
+}
+const CSV_TYPE = "text/csv";
+
+test("créateur : export puis import CSV SumUp du catalogue (aperçu, confirmation, erreurs)", async ({ page }) => {
   const stamp = Date.now();
   await loginOk(page, "crochet@boutique.test", "demo123");
   await page.goto("/creator/products");
 
-  // Export
+  // Export : format CSV SumUp exact
   const res = await page.request.get("/api/products/export");
   expect(res.status()).toBe(200);
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load((await res.body()) as unknown as ArrayBuffer);
-  const ws = wb.getWorksheet("Produits")!;
-  expect(ws.getRow(1).getCell(2).value).toBe("Référence");
+  expect(res.headers()["content-type"]).toContain("text/csv");
+  const rows = parseCsv(await res.text());
+  expect(rows[0]).toEqual([...SUMUP_HEADERS]);
+  const qty = SUMUP_HEADERS.indexOf("Quantity");
+  const bague = rows.find((r) => r[0] === "Le jardin du crochet - Bague")!;
+  expect(bague[SUMUP_HEADERS.indexOf("Category")]).toBe("Le jardin du crochet");
+  const bagueStock = Number(bague[qty]);
 
-  // Modification : +1 sur la ligne « Bague », ajout d'une nouvelle ligne
-  let bagueStock = 0;
-  ws.eachRow((row, n) => {
-    if (n > 1 && row.getCell(3).value === "Bague") {
-      bagueStock = Number(row.getCell(5).value);
-      row.getCell(5).value = bagueStock + 1;
-    }
-  });
-  ws.addRow(["", `xls-${stamp}`, `Produit Excel ${stamp}`, 9.5, 4]);
-  const file = Buffer.from(await wb.xlsx.writeBuffer());
+  // Modification : +1 sur « Bague », ajout d'une nouvelle ligne
+  bague[qty] = String(bagueStock + 1);
+  rows.push(
+    sumupLine({
+      "Item name": `Le jardin du crochet - Produit CSV ${stamp}`,
+      Price: "9.50",
+      Quantity: "4",
+      SKU: `csv-${stamp}`,
+      Category: "Le jardin du crochet",
+    }),
+  );
 
   // Import : aperçu puis confirmation
-  await page.getByRole("button", { name: "Importer (Excel)" }).click();
-  await page.getByLabel("Fichier Excel à importer").setInputFiles({
-    name: "catalogue.xlsx",
-    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    buffer: file,
-  });
+  await page.getByRole("button", { name: "Importer (CSV SumUp)" }).click();
+  await page.getByLabel("Fichier CSV à importer").setInputFiles({ name: "catalogue.csv", mimeType: CSV_TYPE, buffer: Buffer.from(toCsv(rows)) });
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("1 nouveau(x) produit(s)");
   await expect(dialog).toContainText(`Bague : stock ${bagueStock} → ${bagueStock + 1}`);
@@ -284,72 +291,68 @@ test("créateur : export puis import Excel du catalogue (aperçu, confirmation, 
   await expect(dialog).toContainText("Import terminé : 1 produit(s) créé(s)");
   await dialog.getByRole("button", { name: "Voir le catalogue" }).click();
 
-  const newRow = page.getByRole("row", { name: new RegExp(`Produit Excel ${stamp}`) });
-  await expect(newRow).toContainText(`XLS-${stamp}`);
+  const newRow = page.getByRole("row", { name: new RegExp(`Produit CSV ${stamp}`) });
+  await expect(newRow).toContainText(`CSV-${stamp}`);
   await expect(newRow).toContainText("En attente");
   await expect(page.getByRole("row", { name: /\bBague\b/ }).getByRole("cell").nth(4)).toHaveText(String(bagueStock + 1));
 
-  // Fichier avec erreurs : rien n'est importé, pas de bouton de confirmation
-  const bad = new ExcelJS.Workbook();
-  const bs = bad.addWorksheet("Produits");
-  bs.addRow(["Identifiant (ne pas modifier)", "Référence", "Nom", "Prix (€)", "Quantité"]);
-  bs.addRow(["", `bad-${stamp}`, "Produit sans prix", "", 1]);
-  bs.addRow(["999", "X-1", "Identifiant inventé", 5, 1]);
-  await page.getByRole("button", { name: "Importer (Excel)" }).click();
-  await page.getByLabel("Fichier Excel à importer").setInputFiles({
-    name: "erreurs.xlsx",
-    mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    buffer: Buffer.from(await bad.xlsx.writeBuffer()),
-  });
+  // Fichier avec erreurs (point-virgule, comme réenregistré par Excel) : rien n'est importé
+  const bad = toCsv(
+    [
+      ["Item name", "Price", "SKU", "Quantity", "Category"],
+      [`Le jardin du crochet - Sans SKU ${stamp}`, "5,00", "", "1", "Le jardin du crochet"],
+      ["Baldck - Bague", "18,00", "X-1", "1", "Baldck"],
+    ],
+    ";",
+  );
+  await page.getByRole("button", { name: "Importer (CSV SumUp)" }).click();
+  await page.getByLabel("Fichier CSV à importer").setInputFiles({ name: "erreurs.csv", mimeType: CSV_TYPE, buffer: Buffer.from(bad) });
   await expect(page.getByRole("dialog")).toContainText("2 erreur(s)");
   await expect(page.getByRole("dialog")).toContainText("Ligne 2 :");
-  await expect(page.getByRole("dialog")).toContainText("Identifiant 999 inconnu");
+  await expect(page.getByRole("dialog")).toContainText("appartient à la marque « Baldck »");
   await expect(page.getByRole("button", { name: "Confirmer l'import" })).toHaveCount(0);
 });
 
-test("admin : export puis import Excel de tout le catalogue, avec avertissement", async ({ page }) => {
+test("admin : export puis import CSV SumUp de tout le catalogue, avec avertissement", async ({ page }) => {
   const stamp = Date.now();
-  const xlsxType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   await loginOk(page, "admin@boutique.test", "admin123");
   await page.goto("/admin/products?tab=all");
 
   const res = await page.request.get("/api/admin/products/export");
   expect(res.status()).toBe(200);
-  const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load((await res.body()) as unknown as ArrayBuffer);
-  const ws = wb.getWorksheet("Produits")!;
-  expect(ws.getRow(1).getCell(1).value).toBe("Marque");
-  // Stock de « Print A5 » (Koloro) fixé à 42 + nouveau produit Koloro
-  ws.eachRow((row, n) => {
-    if (n > 1 && row.getCell(1).value === "Koloro" && row.getCell(4).value === "Print A5") row.getCell(6).value = 42;
-  });
-  ws.addRow(["Koloro", "", `adm-${stamp}`, `Produit admin ${stamp}`, 15, 2, "", ""]);
+  const rows = parseCsv(await res.text());
+  expect(rows[0]).toEqual([...SUMUP_HEADERS]);
+  // Stock de « Print A5 » (Koloro) fixé à 42 + deux nouveaux produits Koloro
+  // (l'un avec Category, l'autre seulement « Koloro - … » dans l'Item name)
+  rows.find((r) => r[0] === "Koloro - Print A5")![SUMUP_HEADERS.indexOf("Quantity")] = "42";
+  rows.push(sumupLine({ "Item name": `Koloro - Produit admin ${stamp}`, Price: "15.00", Quantity: "2", SKU: `adm-${stamp}`, Category: "Koloro" }));
+  rows.push(sumupLine({ "Item name": `Koloro - Sans catégorie ${stamp}`, Price: "8.00", Quantity: "1", SKU: `adm2-${stamp}` }));
 
-  await page.getByRole("button", { name: "Importer (Excel)" }).click();
+  await page.getByRole("button", { name: "Importer (CSV SumUp)" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText("Attention : cet import écrase les données des créateurs.");
-  await page.getByLabel("Fichier Excel à importer").setInputFiles({ name: "boutique.xlsx", mimeType: xlsxType, buffer: Buffer.from(await wb.xlsx.writeBuffer()) });
-  await expect(dialog).toContainText("1 nouveau(x) produit(s)");
+  await page.getByLabel("Fichier CSV à importer").setInputFiles({ name: "boutique.csv", mimeType: CSV_TYPE, buffer: Buffer.from(toCsv(rows)) });
+  await expect(dialog).toContainText("2 nouveau(x) produit(s)");
   await expect(dialog).toContainText(`Koloro · ADM-${stamp}`);
+  await expect(dialog).toContainText(`Koloro · ADM2-${stamp}`);
   const confirm = dialog.getByRole("button", { name: "Confirmer l'import" });
   await expect(confirm).toBeDisabled();
   await dialog.getByRole("checkbox").check();
   await confirm.click();
-  await expect(dialog).toContainText(/Import terminé : 1 produit\(s\) créé\(s\), \d+ produit\(s\) modifié\(s\), 1 créateur\(s\) notifié\(s\)/);
+  await expect(dialog).toContainText(/Import terminé : 2 produit\(s\) créé\(s\), \d+ produit\(s\) modifié\(s\), 1 créateur\(s\) notifié\(s\)/);
   await dialog.getByRole("button", { name: "Voir le catalogue" }).click();
 
   await page.goto(`/admin/products?tab=all&q=${encodeURIComponent(`Produit admin ${stamp}`)}`);
   await expect(page.getByRole("row", { name: new RegExp(`Produit admin ${stamp}`) })).toContainText("Actif");
 
   // Marque inconnue : refusée
-  const bad = new ExcelJS.Workbook();
-  bad.addWorksheet("Produits").addRows([
-    ["Marque", "Identifiant (ne pas modifier)", "Référence", "Nom", "Prix (€)", "Quantité"],
-    ["Marque fantôme", "", "Z-1", "Produit", 5, 1],
+  const bad = toCsv([
+    ["Item name", "Price", "SKU", "Quantity", "Category"],
+    ["Marque fantôme - Produit", "5.00", "Z-1", "1", "Marque fantôme"],
   ]);
-  await page.getByRole("button", { name: "Importer (Excel)" }).click();
-  await page.getByLabel("Fichier Excel à importer").setInputFiles({ name: "bad.xlsx", mimeType: xlsxType, buffer: Buffer.from(await bad.xlsx.writeBuffer()) });
-  await expect(page.getByRole("dialog")).toContainText("Marque « Marque fantôme » inconnue");
+  await page.getByRole("button", { name: "Importer (CSV SumUp)" }).click();
+  await page.getByLabel("Fichier CSV à importer").setInputFiles({ name: "bad.csv", mimeType: CSV_TYPE, buffer: Buffer.from(bad) });
+  await expect(page.getByRole("dialog")).toContainText("Marque « Marque fantôme » (colonne Category) inconnue");
   await expect(page.getByRole("button", { name: "Confirmer l'import" })).toHaveCount(0);
   await page.keyboard.press("Escape");
 

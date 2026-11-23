@@ -16,7 +16,7 @@ import { SumUpClient } from "@/lib/sumup/client";
 import { productLabel } from "@/lib/utils";
 import { normalizeReference } from "@/lib/reference";
 import { deleteCreatorFiles } from "@/lib/documents";
-import { readWorkbook, uploadedXlsx } from "@/lib/product-import";
+import { readCsv, uploadedCsv } from "@/lib/product-import";
 import { applyAdminImport, describeAdminUpdate, planAdminImport } from "@/lib/product-import-admin";
 import { PRODUCT_STATUS_LABEL } from "@/lib/constants";
 import type { ImportState } from "@/lib/import-state";
@@ -259,13 +259,13 @@ export async function adminUpdateProductAction(_p: ActionState, fd: FormData): P
   return { ok: true, message: "Produit mis à jour." };
 }
 
-/** Import Excel admin de tout le catalogue : aperçu, puis application après acceptation de l'avertissement. */
+/** Import CSV SumUp admin de tout le catalogue : aperçu, puis application après acceptation de l'avertissement. */
 export async function importAllProductsAction(_p: ImportState, fd: FormData): Promise<ImportState> {
   const admin = await requireAdmin();
-  const upload = await uploadedXlsx(fd);
+  const upload = await uploadedCsv(fd);
   if ("error" in upload) return { error: upload.error };
 
-  const { rows, errors } = await readWorkbook(upload.buf, { admin: true });
+  const { rows, errors } = readCsv(upload.text, { admin: true });
   const plan = await planAdminImport(rows, errors);
   const preview: ImportState = {
     mode: "preview",
@@ -276,7 +276,7 @@ export async function importAllProductsAction(_p: ImportState, fd: FormData): Pr
       name: r.name,
       price: euros(r.priceCents),
       quantity: r.quantity ?? 0,
-      status: PRODUCT_STATUS_LABEL[r.status ?? "ACTIVE"],
+      status: PRODUCT_STATUS_LABEL.ACTIVE,
     })),
     updates: plan.updates.map((u) => ({ line: u.line, name: `${u.creatorName} — ${u.name}`, details: describeAdminUpdate(u) })),
     unchanged: plan.unchanged,
@@ -370,10 +370,13 @@ export async function deleteNotificationAction(fd: FormData) {
 
 export async function updateSettingsAction(_p: ActionState, fd: FormData): Promise<ActionState> {
   await requireAdmin();
-  const parsed = z.object({ defaultCommission: pct, cardFeeRate: z.coerce.number().min(0).max(10) }).safeParse(Object.fromEntries(fd));
+  const parsed = z
+    .object({ defaultCommission: pct, cardFeeRate: z.coerce.number().min(0).max(10), vatRate: z.coerce.number().min(0).max(100) })
+    .safeParse(Object.fromEntries(fd));
   if (!parsed.success) return fail(parsed.error);
   await setSetting(SETTING_KEYS.defaultCommissionRate, String(parsed.data.defaultCommission / 100));
   await setSetting(SETTING_KEYS.cardFeeRate, String(parsed.data.cardFeeRate / 100));
+  await setSetting(SETTING_KEYS.defaultVatRate, String(parsed.data.vatRate));
   if (fd.get("applyAll") === "on") {
     await prisma.creator.updateMany({ data: { commissionRate: parsed.data.defaultCommission / 100 } });
   }

@@ -63,8 +63,11 @@ model Product {
   category   String?
   stock      Int      @default(0)
   status     String   @default("PENDING") // PENDING | ACTIVE | REJECTED | ARCHIVED
-  // Nom exact de l'article dans la caisse SumUp (sinon "code - nom - créateur")
+  // Nom exact de l'article dans la caisse SumUp (sinon "Marque - Nom")
   sumupName  String?
+  // Identifiants SumUp de l'article (colonnes « Item id » / « Variant id » du CSV SumUp)
+  sumupItemId    String?
+  sumupVariantId String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
