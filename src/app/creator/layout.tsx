@@ -11,7 +11,6 @@ export default async function CreatorLayout({ children }: { children: React.Reac
       displayName={creator.name}
       roleLabel="Créateur"
       nav={[
-        { href: "/creator/boutique", label: "La boutique", icon: "shop" },
         { href: "/creator/sales", label: "Mes ventes", icon: "cart" },
         { href: "/creator/products", label: "Mes produits", icon: "package" },
         { href: "/creator/stats", label: "Statistiques", icon: "chart" },

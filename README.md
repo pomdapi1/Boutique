@@ -43,7 +43,7 @@ npm run dev                 # http://localhost:3000
 
 ### Scénarios à vérifier
 
-1. **Feed temps réel** — connecté en créateur sur *La boutique*, lancez dans un autre terminal `npm run sumup:simulate -- 3` : les ventes apparaissent sous 30 s (rafraîchissement auto), les paniers contenant vos produits sont marqués ○, *CA global* ouvre le CA par créateur.
+1. **Feed temps réel** — connecté en admin sur le *Tableau de bord*, lancez dans un autre terminal `npm run sumup:simulate -- 3` : les ventes apparaissent sous 30 s (rafraîchissement auto), *CA global* ouvre le CA par créateur. Côté créateur, les nouvelles ventes apparaissent dans *Mes ventes*.
    Variante continue : `MOCK_AUTO_SALE_SECONDS="20"` dans `.env` puis relancez `npm run dev`.
 2. **Ventes** — *Mes ventes* : changez de mois, filtrez Carte / Espèces ou par produit, **Exporter en PDF**. Vérifiez : net = brut − frais SumUp − 30 %.
 3. **Stock** — *Mes produits* › **Stock** sur un produit : ajoutez puis retirez (impossible de descendre sous 0). Un produit vendu jusqu'à 0 passe dans l'onglet *Rupture de stock* et déclenche une notification 🔔.

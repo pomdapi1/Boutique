@@ -36,5 +36,5 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 }
 
 export function homeFor(role: string) {
-  return role === "ADMIN" ? "/admin" : "/creator/boutique";
+  return role === "ADMIN" ? "/admin" : "/creator/sales";
 }

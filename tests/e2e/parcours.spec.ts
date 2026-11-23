@@ -12,7 +12,7 @@ async function login(page: Page, email: string, password: string) {
 
 async function loginOk(page: Page, email: string, password: string) {
   await login(page, email, password);
-  await expect(page).toHaveURL(/\/(admin|creator\/boutique)$/);
+  await expect(page).toHaveURL(/\/(admin|creator\/sales)$/);
 }
 
 async function logout(page: Page) {
@@ -27,7 +27,10 @@ test("mauvais mot de passe refusé", async ({ page }) => {
 
 test("créateur : feed, stock et nouveau produit ; admin : validation", async ({ page }) => {
   await loginOk(page, "crochet@boutique.test", "demo123");
-  await expect(page.getByRole("heading", { name: "La boutique" })).toBeVisible();
+  // Vue « La boutique » retirée : absente du menu, l'ancienne adresse renvoie vers « Mes ventes »
+  await expect(page.getByRole("link", { name: "La boutique" })).toHaveCount(0);
+  await page.goto("/creator/boutique");
+  await expect(page).toHaveURL(/\/creator\/sales$/);
 
   // Ajout de stock sur le premier produit
   await page.getByRole("link", { name: "Mes produits" }).click();
@@ -344,7 +347,7 @@ test("admin : export puis import Excel de tout le catalogue, avec avertissement"
 
 test("un créateur n'accède pas à l'admin", async ({ page }) => {
   await loginOk(page, "crochet@boutique.test", "demo123");
-  await expect(page).toHaveURL(/creator\/boutique/);
+  await expect(page).toHaveURL(/creator\/sales/);
   await page.goto("/admin");
-  await expect(page).toHaveURL(/creator\/boutique/);
+  await expect(page).toHaveURL(/creator\/sales/);
 });
