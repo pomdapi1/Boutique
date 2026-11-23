@@ -393,3 +393,28 @@ test("statistiques créateur : uniquement ses propres chiffres", async ({ page }
   await expect(page.getByText(/CA de la boutique/)).toHaveCount(0);
   await expect(page.getByText(/Net à reverser/).first()).toBeVisible();
 });
+
+test("admin : tri des colonnes de tous les produits", async ({ page }) => {
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/products?tab=all");
+  const prices = async () =>
+    (await page.locator("tbody tr td:nth-child(5)").allTextContents()).map((t) => Number(t.replace(/[^\d,]/g, "").replace(",", ".")));
+
+  await page.getByRole("columnheader", { name: "Prix", exact: true }).getByRole("link").click();
+  await page.waitForURL(/sort=price&dir=asc/);
+  const asc = await prices();
+  expect(asc.length).toBeGreaterThan(1);
+  expect(asc).toEqual([...asc].sort((a, b) => a - b));
+  await expect(page.getByRole("columnheader", { name: "Prix", exact: true })).toHaveAttribute("aria-sort", "ascending");
+
+  await page.getByRole("columnheader", { name: "Prix", exact: true }).getByRole("link").click();
+  await page.waitForURL(/sort=price&dir=desc/);
+  const desc = await prices();
+  expect(desc).toEqual([...desc].sort((a, b) => b - a));
+
+  // Le tri conserve les filtres (recherche)
+  await page.goto("/admin/products?tab=all&q=crochet");
+  await page.getByRole("columnheader", { name: "Stock", exact: true }).getByRole("link").click();
+  await page.waitForURL(/tab=all&q=crochet&sort=stock&dir=asc/);
+  await expect(page.locator("tbody tr").first()).toContainText("Le jardin du crochet");
+});

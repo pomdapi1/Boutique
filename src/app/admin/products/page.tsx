@@ -15,6 +15,7 @@ import {
   rejectProductAction,
 } from "@/app/actions/admin";
 import { ProductCsvActions } from "@/components/product-import";
+import { SortHeader } from "@/components/sort-header";
 
 type SP = Promise<Record<string, string | undefined>>;
 
@@ -152,6 +153,8 @@ export default async function AdminProductsPage({ searchParams }: { searchParams
   );
 }
 
+const ADMIN_SORTS = ["reference", "name", "brand", "owner", "price", "vat", "stock", "status"] as const;
+
 async function AllProducts({ sp, creators }: { sp: Record<string, string | undefined>; creators: { id: string; name: string }[] }) {
   const q = sp.q ?? "";
   const creatorId = sp.creator ?? "";
@@ -169,6 +172,35 @@ async function AllProducts({ sp, creators }: { sp: Record<string, string | undef
       normalize(`${p.code} ${p.reference ?? ""} ${p.name} ${p.creator.name} ${p.creator.ownerName ?? ""}`).includes(nq),
     );
   }
+
+  // Tri par colonne (comme le catalogue créateur) ; à égalité : marque puis nom
+  const sort = (ADMIN_SORTS as readonly string[]).includes(sp.sort ?? "") ? sp.sort! : "brand";
+  const dir = sp.dir === "desc" ? "desc" : "asc";
+  const key = (p: (typeof products)[number]): string | number =>
+    sort === "reference"
+      ? (p.reference ?? "")
+      : sort === "name"
+        ? p.name
+        : sort === "owner"
+          ? (p.creator.ownerName ?? "")
+          : sort === "price"
+            ? p.priceCents
+            : sort === "vat"
+              ? (p.vatRate ?? -1) // « non applicable » trié avant 0 %
+              : sort === "stock"
+                ? p.stock
+                : sort === "status"
+                  ? p.status
+                  : p.creator.name;
+  const tiebreak = (a: (typeof products)[number], b: (typeof products)[number]) =>
+    a.creator.name.localeCompare(b.creator.name, "fr") || a.name.localeCompare(b.name, "fr");
+  products = [...products].sort((a, b) => {
+    const ka = key(a), kb = key(b);
+    const c = typeof ka === "number" ? ka - (kb as number) : String(ka).localeCompare(String(kb), "fr");
+    return (dir === "asc" ? c : -c) || tiebreak(a, b);
+  });
+  const base: Record<string, string> = { tab: "all", ...(q ? { q } : {}), ...(creatorId ? { creator: creatorId } : {}), ...(sp.stock ? { stock: sp.stock } : {}) };
+  const h = { sort, dir: dir as "asc" | "desc", baseParams: base };
 
   return (
     <>
@@ -194,37 +226,39 @@ async function AllProducts({ sp, creators }: { sp: Record<string, string | undef
         <table className="w-full min-w-[860px] text-left">
           <thead className="border-b border-line whitespace-nowrap text-muted">
             <tr>
-              <th className="px-3 py-4 font-semibold">Référence</th>
-              <th className="px-3 py-4 font-semibold">Produit</th>
-              <th className="px-3 py-4 font-semibold">Marque</th>
-              <th className="px-3 py-4 font-semibold whitespace-normal">Nom du créateur</th>
-              <th className="px-3 py-4 text-right font-semibold">Prix</th>
-              <th className="px-3 py-4 text-right font-semibold">TVA</th>
-              <th className="px-3 py-4 text-right font-semibold">Stock</th>
-              <th className="px-3 py-4 font-semibold">Statut</th>
-              <th />
+              <SortHeader label="Référence" field="reference" {...h} />
+              <SortHeader label="Produit" field="name" {...h} />
+              <SortHeader label="Marque" field="brand" {...h} />
+              <SortHeader label="Nom du créateur" field="owner" {...h} wrap />
+              <SortHeader label="Prix" field="price" {...h} className="text-right" />
+              <SortHeader label="TVA" field="vat" {...h} className="text-right" />
+              <SortHeader label="Stock" field="stock" {...h} className="text-right" />
+              <SortHeader label="Statut" field="status" {...h} />
+              <th>
+                <span className="sr-only">Actions</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {products.map((p) => (
               <tr key={p.id} className="hover:bg-cream/60">
-                <td className="px-3 py-3 font-mono text-sm whitespace-nowrap">
+                <td className="px-2.5 py-3 font-mono text-sm whitespace-nowrap">
                   {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
                 </td>
-                <td className="px-3 py-3">
+                <td className="px-2.5 py-3">
                   {p.code} - {p.name}
                 </td>
-                <td className="px-3 py-3">{p.creator.name}</td>
-                <td className="px-3 py-3">{p.creator.ownerName ?? <span className="text-muted">—</span>}</td>
-                <td className="px-3 py-3 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
-                <td className="px-3 py-3 text-right whitespace-nowrap">
+                <td className="px-2.5 py-3">{p.creator.name}</td>
+                <td className="px-2.5 py-3">{p.creator.ownerName ?? <span className="text-muted">—</span>}</td>
+                <td className="px-2.5 py-3 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
+                <td className="px-2.5 py-3 text-right whitespace-nowrap">
                   {p.vatRate === null ? <span className="text-muted" title="Non applicable">n/a</span> : `${p.vatRate} %`}
                 </td>
-                <td className={`px-4 py-3 text-right ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
-                <td className="px-3 py-3">
+                <td className={`px-2.5 py-3 text-right ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
+                <td className="px-2.5 py-3">
                   <StatusBadge status={p.status} />
                 </td>
-                <td className="px-3 py-3 text-right">
+                <td className="px-2.5 py-3 text-right">
                   <AdminProductDialog
                     action={adminUpdateProductAction}
                     product={{ ...p, canonical: canonicalSumupName({ code: p.code, name: p.name, creatorName: p.creator.name }) }}
