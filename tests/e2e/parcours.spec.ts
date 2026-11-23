@@ -351,3 +351,14 @@ test("un créateur n'accède pas à l'admin", async ({ page }) => {
   await page.goto("/admin");
   await expect(page).toHaveURL(/creator\/sales/);
 });
+
+test("statistiques créateur : uniquement ses propres chiffres", async ({ page }) => {
+  await loginOk(page, "crochet@boutique.test", "demo123");
+  await page.goto("/creator/stats");
+  await expect(page.getByRole("link", { name: "Boutique", exact: true })).toHaveCount(0);
+  await expect(page.getByText(/Net à reverser/).first()).toBeVisible();
+  // Ancien lien vers l'onglet boutique : affiche quand même les chiffres du créateur
+  await page.goto("/creator/stats?tab=shop");
+  await expect(page.getByText(/CA de la boutique/)).toHaveCount(0);
+  await expect(page.getByText(/Net à reverser/).first()).toBeVisible();
+});
