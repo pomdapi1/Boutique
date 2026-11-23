@@ -191,36 +191,40 @@ async function AllProducts({ sp, creators }: { sp: Record<string, string | undef
         />
       </div>
       <div className="card overflow-x-auto">
-        <table className="w-full min-w-[1000px] text-left">
+        <table className="w-full min-w-[860px] text-left">
           <thead className="border-b border-line whitespace-nowrap text-muted">
             <tr>
-              <th className="px-4 py-4 font-semibold">Référence</th>
-              <th className="px-4 py-4 font-semibold">Produit</th>
-              <th className="px-4 py-4 font-semibold">Marque</th>
-              <th className="px-4 py-4 font-semibold">Nom du créateur</th>
-              <th className="px-4 py-4 text-right font-semibold">Prix</th>
-              <th className="px-4 py-4 text-right font-semibold">Stock</th>
-              <th className="px-4 py-4 font-semibold">Statut</th>
+              <th className="px-3 py-4 font-semibold">Référence</th>
+              <th className="px-3 py-4 font-semibold">Produit</th>
+              <th className="px-3 py-4 font-semibold">Marque</th>
+              <th className="px-3 py-4 font-semibold whitespace-normal">Nom du créateur</th>
+              <th className="px-3 py-4 text-right font-semibold">Prix</th>
+              <th className="px-3 py-4 text-right font-semibold">TVA</th>
+              <th className="px-3 py-4 text-right font-semibold">Stock</th>
+              <th className="px-3 py-4 font-semibold">Statut</th>
               <th />
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {products.map((p) => (
               <tr key={p.id} className="hover:bg-cream/60">
-                <td className="px-4 py-3 font-mono text-sm whitespace-nowrap">
+                <td className="px-3 py-3 font-mono text-sm whitespace-nowrap">
                   {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   {p.code} - {p.name}
                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">{p.creator.name}</td>
-                <td className="px-4 py-3 whitespace-nowrap">{p.creator.ownerName ?? <span className="text-muted">—</span>}</td>
-                <td className="px-4 py-3 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
+                <td className="px-3 py-3">{p.creator.name}</td>
+                <td className="px-3 py-3">{p.creator.ownerName ?? <span className="text-muted">—</span>}</td>
+                <td className="px-3 py-3 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
+                <td className="px-3 py-3 text-right whitespace-nowrap">
+                  {p.vatRate === null ? <span className="text-muted" title="Non applicable">n/a</span> : `${p.vatRate} %`}
+                </td>
                 <td className={`px-4 py-3 text-right ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
-                <td className="px-4 py-3">
+                <td className="px-3 py-3">
                   <StatusBadge status={p.status} />
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-3 py-3 text-right">
                   <AdminProductDialog
                     action={adminUpdateProductAction}
                     product={{ ...p, canonical: canonicalSumupName({ code: p.code, name: p.name, creatorName: p.creator.name }) }}

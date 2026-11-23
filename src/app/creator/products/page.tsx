@@ -17,7 +17,7 @@ import {
 import { ProductCsvActions } from "@/components/product-import";
 
 type SP = Promise<Record<string, string | undefined>>;
-const SORTS = ["reference", "name", "price", "stock", "status"] as const;
+const SORTS = ["reference", "name", "price", "vat", "stock", "status"] as const;
 
 export default async function ProductsPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
@@ -42,6 +42,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
   const key = (p: (typeof all)[number]) =>
     sort === "price"
       ? p.priceCents
+      : sort === "vat"
+        ? (p.vatRate ?? -1) // « non applicable » trié avant 0 %
       : sort === "stock"
         ? p.stock
         : sort === "status"
@@ -96,7 +98,8 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                 <SortHeader label="Référence" field="reference" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Nom" field="name" sort={sort} dir={dir} baseParams={base} />
                 <SortHeader label="Prix" field="price" sort={sort} dir={dir} baseParams={base} className="text-right" />
-                <th className="px-3 py-4 font-semibold text-muted">Marque</th>
+                <SortHeader label="TVA" field="vat" sort={sort} dir={dir} baseParams={base} className="px-2 text-right" />
+                <th className="px-2.5 py-4 font-semibold text-muted">Marque</th>
                 <SortHeader label="Quantité" field="stock" sort={sort} dir={dir} baseParams={base} className="text-right" />
                 <SortHeader label="Statut" field="status" sort={sort} dir={dir} baseParams={base} />
                 <th />
@@ -105,24 +108,24 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
             <tbody className="divide-y divide-line">
               {rows.map((p) => (
                 <tr key={p.id} className="hover:bg-cream/60">
-                  <td className="px-3 py-4 font-mono text-sm whitespace-nowrap">
+                  <td className="px-2.5 py-4 font-mono text-sm whitespace-nowrap">
                     {p.reference ?? <span className="font-sans text-muted italic">à renseigner</span>}
                   </td>
-                  <td className="px-3 py-4">{p.name}</td>
-                  <td className="px-3 py-4 text-right whitespace-nowrap">
-                    {euros(p.priceCents)}
-                    <div className="text-xs text-muted">{p.vatRate === null ? "TVA n/a" : `TVA ${p.vatRate} %`}</div>
+                  <td className="px-2.5 py-4">{p.name}</td>
+                  <td className="px-2.5 py-4 text-right whitespace-nowrap">{euros(p.priceCents)}</td>
+                  <td className="px-2 py-4 text-right whitespace-nowrap">
+                    {p.vatRate === null ? <span className="text-muted" title="Non applicable">n/a</span> : `${p.vatRate} %`}
                   </td>
-                  <td className="px-3 py-4">{creator.name}</td>
-                  <td className={`px-3 py-4 text-right font-medium ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
-                  <td className="px-3 py-4">
+                  <td className="px-2.5 py-4">{creator.name}</td>
+                  <td className={`px-2.5 py-4 text-right font-medium ${p.stock <= 0 ? "text-danger-600" : ""}`}>{p.stock}</td>
+                  <td className="px-2.5 py-4">
                     <div className="flex flex-wrap gap-1">
                       <StatusBadge status={p.status} />
                       {p.requests.length > 0 && <Pill tone="amber">Modif. en attente</Pill>}
                     </div>
                   </td>
-                  <td className="px-3 py-4">
-                    <div className="flex justify-end gap-2">
+                  <td className="px-2.5 py-4">
+                    <div className="flex justify-end gap-1.5">
                       {p.status !== "REJECTED" && <StockDialog product={p} action={adjustStockAction} />}
                       <EditProductDialog product={p} action={requestProductChangeAction} pending={p.requests.length > 0} />
                       <DeleteProductDialog product={p} status={p.status} action={deleteProductAction} />

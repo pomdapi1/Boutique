@@ -40,13 +40,13 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   // Catalogue créateur : plus de code "001 - " devant le nom, colonne Marque
   await expect(row).not.toContainText("001 -");
   await expect(page.getByRole("columnheader", { name: "Marque" })).toBeVisible();
-  const before = Number(await row.getByRole("cell").nth(4).innerText());
+  const before = Number(await row.getByRole("cell").nth(5).innerText());
   await row.getByRole("button", { name: "Stock" }).click();
   await page.getByLabel("Quantité").fill("2");
   await page.getByRole("button", { name: "Valider" }).click();
   await expect(page.getByText(`Stock mis à jour : ${before + 2}.`)).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(row.getByRole("cell").nth(4)).toHaveText(String(before + 2));
+  await expect(row.getByRole("cell").nth(5)).toHaveText(String(before + 2));
 
   // Nouveau produit → en attente
   const stamp = Date.now();
@@ -71,7 +71,9 @@ test("créateur : feed, stock et nouveau produit ; admin : validation", async ({
   const newRow = page.getByRole("row", { name: new RegExp(name) });
   await expect(newRow).toContainText("En attente");
   await expect(newRow).toContainText(reference.toUpperCase());
-  await expect(newRow).toContainText("TVA 5 %");
+  // Colonne TVA (4e colonne : Référence, Nom, Prix, TVA…)
+  await expect(page.getByRole("columnheader", { name: /^TVA/ })).toBeVisible();
+  await expect(newRow.getByRole("cell").nth(3)).toHaveText("5 %");
 
   // Déconnexion → admin valide
   await logout(page);
@@ -299,9 +301,9 @@ test("créateur : export puis import CSV SumUp du catalogue (aperçu, confirmati
 
   const newRow = page.getByRole("row", { name: new RegExp(`Produit CSV ${stamp}`) });
   await expect(newRow).toContainText(`CSV-${stamp}`);
-  await expect(newRow).toContainText("TVA 10 %");
+  await expect(newRow.getByRole("cell").nth(3)).toHaveText("10 %");
   await expect(newRow).toContainText("En attente");
-  await expect(page.getByRole("row", { name: /\bBague\b/ }).getByRole("cell").nth(4)).toHaveText(String(bagueStock + 1));
+  await expect(page.getByRole("row", { name: /\bBague\b/ }).getByRole("cell").nth(5)).toHaveText(String(bagueStock + 1));
 
   // Fichier avec erreurs (point-virgule, comme réenregistré par Excel) : rien n'est importé
   const bad = toCsv(
@@ -350,7 +352,11 @@ test("admin : export puis import CSV SumUp de tout le catalogue, avec avertissem
   await dialog.getByRole("button", { name: "Voir le catalogue" }).click();
 
   await page.goto(`/admin/products?tab=all&q=${encodeURIComponent(`Produit admin ${stamp}`)}`);
-  await expect(page.getByRole("row", { name: new RegExp(`Produit admin ${stamp}`) })).toContainText("Actif");
+  const adminRow = page.getByRole("row", { name: new RegExp(`Produit admin ${stamp}`) });
+  await expect(adminRow).toContainText("Actif");
+  // Colonne TVA : « Tax rate (%) » vide dans le fichier → non applicable
+  await expect(page.getByRole("columnheader", { name: "TVA", exact: true })).toBeVisible();
+  await expect(adminRow.getByRole("cell").nth(5)).toHaveText("n/a");
 
   // Marque inconnue : refusée
   const bad = toCsv([

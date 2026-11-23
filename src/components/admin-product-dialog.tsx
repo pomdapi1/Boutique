@@ -25,9 +25,12 @@ export function AdminProductDialog({ product, action }: { product: P; action: Fo
     <Modal
       title={`Produit ${product.code}`}
       triggerClassName="btn btn-outline btn-sm"
+      triggerTitle="Modifier"
       trigger={
         <>
-          <Pencil size={16} /> Modifier
+          <Pencil size={16} aria-hidden />
+          {/* Libellé visible sur grand écran ; sinon icône seule (nom accessible conservé) */}
+          <span className="sr-only 2xl:not-sr-only">Modifier</span>
         </>
       }
     >

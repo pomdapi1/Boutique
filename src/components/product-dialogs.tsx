@@ -24,9 +24,12 @@ export function StockDialog({ product, action }: { product: P; action: FormActio
     <Modal
       title={`Stock — ${product.name}`}
       triggerClassName="btn btn-outline btn-sm"
+      triggerTitle="Stock"
       trigger={
         <>
-          <ArrowDownUp size={16} /> Stock
+          <ArrowDownUp size={16} aria-hidden />
+          {/* Libellé masqué sur les écrans étroits (nom accessible conservé) */}
+          <span className="sr-only min-[1360px]:not-sr-only">Stock</span>
         </>
       }
     >
