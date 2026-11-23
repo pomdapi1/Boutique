@@ -1,5 +1,5 @@
 # --- Build -------------------------------------------------------------
-FROM node:22-bookworm-slim AS builder
+FROM node:26-bookworm-slim AS builder
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
@@ -22,13 +22,13 @@ RUN PRISMA_VERSION=$(node -p "require('./node_modules/prisma/package.json').vers
 # dynamiquement (polices de pdfkit, fichiers "module-sync" comme
 # generator-function/require.mjs sous Node 22).
 # On embarque donc toutes les dépendances de production.
-FROM node:22-bookworm-slim AS prod-deps
+FROM node:26-bookworm-slim AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 # --- Runtime -----------------------------------------------------------
-FROM node:22-bookworm-slim AS runner
+FROM node:26-bookworm-slim AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates tzdata curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
