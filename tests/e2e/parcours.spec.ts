@@ -4,6 +4,13 @@ import { SUMUP_HEADERS } from "../../src/lib/product-sheet";
 
 // Prérequis : base initialisée avec `npm run seed`.
 
+// Une « IP » différente par test : les échecs de connexion volontaires des tests ne
+// s'accumulent pas sur une même adresse d'un lancement à l'autre (limite anti force brute).
+const fakeIp = () => `10.${[0, 0, 0].map(() => Math.floor(Math.random() * 250) + 1).join(".")}`;
+test.beforeEach(async ({ page }) => {
+  await page.setExtraHTTPHeaders({ "x-forwarded-for": fakeIp() });
+});
+
 async function login(page: Page, email: string, password: string) {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
@@ -417,4 +424,97 @@ test("admin : tri des colonnes de tous les produits", async ({ page }) => {
   await page.getByRole("columnheader", { name: "Stock", exact: true }).getByRole("link").click();
   await page.waitForURL(/tab=all&q=crochet&sort=stock&dir=asc/);
   await expect(page.locator("tbody tr").first()).toContainText("Le jardin du crochet");
+});
+
+test("sécurité : en-têtes HTTP de protection", async ({ page }) => {
+  const res = await page.request.get("/login");
+  const h = res.headers();
+  expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(h["x-frame-options"]).toBe("DENY");
+  expect(h["x-content-type-options"]).toBe("nosniff");
+  expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+  expect(h["x-powered-by"]).toBeUndefined();
+  // La page fonctionne avec la CSP (pas d'erreur de script bloqué)
+  const blocked: string[] = [];
+  page.on("console", (m) => m.type() === "error" && /Content Security Policy/i.test(m.text()) && blocked.push(m.text()));
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/stats");
+  await expect(page.getByRole("heading", { name: "Statistiques" })).toBeVisible();
+  expect(blocked).toEqual([]);
+});
+
+test("sécurité : compte bloqué après 5 échecs de connexion", async ({ page }) => {
+  const email = `inconnu-${Date.now()}@boutique.test`;
+  for (let i = 0; i < 5; i++) {
+    await login(page, email, `faux-${i}`);
+    await expect(page.getByText("Identifiants incorrects.")).toBeVisible();
+  }
+  await login(page, email, "faux-6");
+  await expect(page.getByText(/Trop de tentatives échouées\. Réessayez dans 15 minutes\./)).toBeVisible();
+});
+
+test("sécurité : changement de mot de passe, autres sessions révoquées", async ({ page, browser }) => {
+  const stamp = Date.now();
+  const brand = `Marque mdp ${stamp}`;
+  const email = `mdp-${stamp}@boutique.test`;
+  await loginOk(page, "admin@boutique.test", "admin123");
+  await page.goto("/admin/creators");
+  await page.getByRole("button", { name: "Ajouter un créateur" }).click();
+  await page.getByLabel("Nom du créateur").fill(`Bob ${stamp}`);
+  await page.getByLabel("Nom de la marque").fill(brand);
+  await page.getByLabel("Email de connexion").fill(email);
+  await page.getByLabel("Mot de passe provisoire").fill("motdepasse123");
+  await page.getByRole("button", { name: "Créer le compte" }).click();
+  await expect(page.getByText(/Compte créé pour/)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await logout(page);
+
+  // Deux appareils connectés au même compte
+  await loginOk(page, email, "motdepasse123");
+  const other = await browser.newContext({ extraHTTPHeaders: { "x-forwarded-for": fakeIp() } });
+  const page2 = await other.newPage();
+  await loginOk(page2, email, "motdepasse123");
+
+  // Menu utilisateur → Mon compte
+  await page.getByRole("button", { name: new RegExp(brand) }).click();
+  await page.getByRole("link", { name: "Mon compte" }).click();
+  await expect(page).toHaveURL(/\/creator\/account$/);
+  const form = page.getByRole("main");
+  await form.getByLabel("Mot de passe actuel").fill("mauvais-mdp");
+  await form.getByLabel("Nouveau mot de passe", { exact: true }).fill("nouveau-mdp-2026");
+  await form.getByLabel("Confirmer le nouveau mot de passe").fill("nouveau-mdp-2026");
+  await form.getByRole("button", { name: "Changer le mot de passe" }).click();
+  await expect(page.getByText("Mot de passe actuel incorrect.")).toBeVisible();
+
+  await form.getByLabel("Mot de passe actuel").fill("motdepasse123");
+  await form.getByLabel("Nouveau mot de passe", { exact: true }).fill("nouveau-mdp-2026");
+  await form.getByLabel("Confirmer le nouveau mot de passe").fill("nouveau-mdp-2026");
+  await form.getByRole("button", { name: "Changer le mot de passe" }).click();
+  await expect(page.getByText(/Mot de passe modifié/)).toBeVisible();
+
+  // Cet appareil reste connecté ; l'autre est renvoyé vers la connexion
+  await page.goto("/creator/products");
+  await expect(page).toHaveURL(/\/creator\/products$/);
+  await page2.goto("/creator/products");
+  await expect(page2).toHaveURL(/\/login$/);
+  await expect(page2.getByRole("button", { name: "Se connecter" })).toBeVisible();
+  await other.close();
+
+  // Ancien mot de passe refusé, nouveau accepté
+  await logout(page);
+  await login(page, email, "motdepasse123");
+  await expect(page.getByText("Identifiants incorrects.")).toBeVisible();
+  await loginOk(page, email, "nouveau-mdp-2026");
+});
+
+test("sécurité : formules refusées dans les noms de produits", async ({ page }) => {
+  await loginOk(page, "crochet@boutique.test", "demo123");
+  await page.goto("/creator/products");
+  await page.getByRole("button", { name: "Ajouter des produits" }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Référence produit").fill(`F-${Date.now()}`);
+  await dialog.getByLabel("Nom du produit").fill('=HYPERLINK("http://exemple.test")');
+  await dialog.getByLabel("Prix (€)").fill("10");
+  await dialog.getByRole("button", { name: "Ajouter" }).click();
+  await expect(dialog).toContainText("Le nom ne doit pas commencer par =, +, - ou @");
 });

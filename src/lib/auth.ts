@@ -6,11 +6,12 @@ import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession } from "./s
 
 export { hashPassword } from "./auth-hash";
 
-export async function createSession(user: { id: string; role: string; creatorId: string | null }) {
+export async function createSession(user: { id: string; role: string; creatorId: string | null; sessionVersion: number }) {
   const token = await signSession({
     uid: user.id,
     role: user.role as "ADMIN" | "CREATOR",
     cid: user.creatorId,
+    sv: user.sessionVersion,
   });
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -41,25 +42,35 @@ export async function authenticate(email: string, password: string) {
   return user;
 }
 
-/** Utilisateur courant (relu en base à chaque requête : un compte désactivé perd l'accès). */
+/** Vérifie le mot de passe d'un utilisateur déjà identifié (changement de mot de passe). */
+export async function checkPassword(user: { passwordHash: string }, password: string) {
+  return bcrypt.compare(password, user.passwordHash);
+}
+
+/**
+ * Utilisateur courant, relu en base à chaque requête : un compte désactivé perd l'accès,
+ * et une session ouverte avant un changement de mot de passe (sessionVersion) est refusée.
+ */
 export async function currentUser() {
   const session = await verifySession((await cookies()).get(SESSION_COOKIE)?.value);
   if (!session) return null;
   const user = await prisma.user.findUnique({ where: { id: session.uid }, include: { creator: true } });
   if (!user || (user.creator && !user.creator.active)) return null;
+  if (user.sessionVersion !== session.sv || user.role !== session.role) return null;
   return user;
 }
 
+// Session absente ou révoquée : /logout efface le cookie avant d'afficher /login.
 export async function requireAdmin() {
   const user = await currentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/logout");
   if (user.role !== "ADMIN") redirect("/creator/sales");
   return user;
 }
 
 export async function requireCreator() {
   const user = await currentUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/logout");
   if (user.role !== "CREATOR" || !user.creator) redirect("/admin");
   return { user, creator: user.creator };
 }

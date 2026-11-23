@@ -8,6 +8,8 @@ export type SessionPayload = {
   uid: string;
   role: "ADMIN" | "CREATOR";
   cid: string | null;
+  /** Version de session de l'utilisateur au moment de la connexion (voir User.sessionVersion). */
+  sv: number;
 };
 
 function secret() {
@@ -29,7 +31,13 @@ export async function verifySession(token: string | undefined): Promise<SessionP
   try {
     const { payload } = await jwtVerify(token, secret());
     if (typeof payload.uid !== "string" || (payload.role !== "ADMIN" && payload.role !== "CREATOR")) return null;
-    return { uid: payload.uid, role: payload.role, cid: (payload.cid as string | null) ?? null };
+    return {
+      uid: payload.uid,
+      role: payload.role,
+      cid: (payload.cid as string | null) ?? null,
+      // Jetons émis avant l'ajout de la version : considérés comme version 0.
+      sv: typeof payload.sv === "number" ? payload.sv : 0,
+    };
   } catch {
     return null;
   }

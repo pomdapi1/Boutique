@@ -15,6 +15,7 @@ import { nextProductCode } from "./products";
 import { notifyAdmins } from "./notifications";
 import { getDefaultVatRate } from "./settings";
 import { vatLabel } from "./constants";
+import { formulaError, looksLikeFormula } from "./text";
 import {
   norm,
   productNameFromItemName,
@@ -123,6 +124,10 @@ export async function planImport(creator: { id: string; name: string }, rows: Sh
     const name = productNameFromItemName(r.itemName, creator.name);
     if (name.length < 2 || name.length > 120) {
       errors.push({ line: r.line, message: "Nom du produit manquant ou trop long (120 caractères maximum) après la marque." });
+      continue;
+    }
+    if (looksLikeFormula(name)) {
+      errors.push({ line: r.line, message: formulaError("Le nom du produit") });
       continue;
     }
     const product = (r.itemId ? byItemId.get(r.itemId) : undefined) ?? byRef.get(r.reference) ?? byItemName.get(normalize(r.itemName));

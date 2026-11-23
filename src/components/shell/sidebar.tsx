@@ -7,6 +7,7 @@ import {
   BarChart3,
   ChevronsUpDown,
   FileText,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -44,12 +45,14 @@ export function Sidebar({
   displayName,
   roleLabel,
   email,
+  accountHref,
   logout,
 }: {
   nav: NavItem[];
   displayName: string;
   roleLabel: string;
   email: string;
+  accountHref: string;
   logout: () => Promise<void>;
 }) {
   const pathname = usePathname();
@@ -117,6 +120,9 @@ export function Sidebar({
               <div className="font-semibold">{displayName}</div>
               <div className="truncate text-sm text-muted">{email}</div>
             </div>
+            <Link href={accountHref} onClick={() => setMenuOpen(false)} className="flex w-full items-center gap-3 px-4 py-3 hover:bg-cream">
+              <KeyRound size={18} /> Mon compte
+            </Link>
             <form action={logout}>
               <button className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-cream">
                 <LogOut size={18} /> Déconnexion

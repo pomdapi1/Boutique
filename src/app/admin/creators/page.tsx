@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { computePayouts } from "@/lib/stats";
 import { monthKey } from "@/lib/dates";
 import { euros } from "@/lib/money";
-import { DOCUMENT_TYPES } from "@/lib/constants";
+import { DOCUMENT_TYPES, PASSWORD_MIN } from "@/lib/constants";
 import { getDefaultCommissionRate } from "@/lib/settings";
 import { PageHeader, Pill } from "@/components/ui";
 import { Modal } from "@/components/modal";
@@ -70,7 +70,7 @@ export default async function CreatorsPage() {
                 <label className="label" htmlFor="new-password">
                   Mot de passe provisoire
                 </label>
-                <input id="new-password" name="password" type="text" minLength={8} required autoComplete="off" className="input" />
+                <input id="new-password" name="password" type="text" minLength={PASSWORD_MIN} required autoComplete="off" className="input" />
               </div>
               <div>
                 <label className="label" htmlFor="new-commission">

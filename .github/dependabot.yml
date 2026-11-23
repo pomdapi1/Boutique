@@ -1,0 +1,28 @@
+# Mises à jour automatiques des dépendances (pull requests sur GitHub).
+# Les correctifs de sécurité arrivent dès leur publication ; les autres chaque semaine.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # Correctifs mineurs regroupés en une seule PR
+      mineurs:
+        update-types: [minor, patch]
+    ignore:
+      # Montées de version majeures (Next 16, Prisma 7…) : à faire à la main, avec tests
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

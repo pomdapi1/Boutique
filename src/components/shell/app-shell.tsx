@@ -20,7 +20,10 @@ export async function AppShell({
   const notifications = await listNotificationsFor(user);
   return (
     <div className="flex min-h-screen">
-      <Sidebar nav={nav} displayName={displayName} roleLabel={roleLabel} email={user.email} logout={logoutAction} />
+      <Sidebar nav={nav} displayName={displayName} roleLabel={roleLabel} email={user.email}
+        accountHref={user.role === "ADMIN" ? "/admin/account" : "/creator/account"}
+        logout={logoutAction}
+      />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-20 items-center justify-end gap-6 border-b border-line px-6 sm:px-10">
           <NotificationBell

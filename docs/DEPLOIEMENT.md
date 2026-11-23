@@ -63,6 +63,31 @@ sqlite3 /app/data/boutique.db ".backup '/app/data/backup-$(date +%F).db'"
 ```
 et/ou une sauvegarde du volume `/app/data` vers un stockage S3 externe (Coolify › *S3 storages*). Pensez à garder une copie hors du serveur.
 
+## 6. Sécurité du serveur (à vérifier une fois)
+
+Les identifiants SumUp (`SUMUP_API_KEY`), `AUTH_SECRET` et `ADMIN_PASSWORD` ne sont lisibles que depuis
+**Coolify** et par **root / le groupe `docker`** sur le VPS (`docker inspect`). Protéger ces deux accès protège la clé.
+
+1. **Coolify en HTTPS + 2FA** : *Settings › Instance Domain* (ex. `coolify.lessongescreatifs.io`, enregistrement A
+   vers le VPS), puis activer la double authentification dans le profil. Ne plus utiliser `http://IP:8000`.
+2. **Pare-feu Hostinger** (hPanel › VPS › Pare-feu) : n'autoriser que 22, 80 et 443 ; fermer 8000, 6001, 6002
+   une fois Coolify servi en HTTPS. ⚠️ `ufw` seul ne suffit pas : Docker contourne ses règles.
+3. **Variables** : `SUMUP_API_KEY`, `AUTH_SECRET`, `ADMIN_PASSWORD` cochées *Secret* et **pas** *Build Variable*
+   (sinon elles se retrouvent dans l'image). Supprimer `ADMIN_PASSWORD`, `ADMIN_RESET_PASSWORD` et
+   `INSECURE_COOKIES` quand ils ne servent plus.
+4. **Pas de port publié** pour l'application (champ *Ports Mappings* vide) : tout passe par le proxy HTTPS.
+   Le proxy fournit aussi l'IP réelle utilisée par la limitation des tentatives de connexion.
+5. **SSH** : clé uniquement (`PasswordAuthentication no`, `PermitRootLogin prohibit-password`), `fail2ban`,
+   `unattended-upgrades`.
+6. **Clé SumUp** : si elle a circulé ailleurs que dans Coolify (mail, messagerie…), la révoquer et en créer une
+   nouvelle dans le tableau de bord SumUp ; l'application n'a besoin que de lire les transactions.
+7. **Sauvegardes chiffrées** du volume `/app/data` (base + RIB / KBIS des créateurs), stockées hors du VPS.
+8. **GitHub** : activer *Dependabot alerts* et *security updates* (Settings › Code security) ;
+   `.github/dependabot.yml` propose les mises à jour mineures chaque semaine.
+
+Côté application : connexions limitées (5 échecs par compte / 20 par IP en 15 min), sessions révoquées au
+changement de mot de passe (page *Mon compte*), en-têtes de sécurité (CSP, HSTS, anti-iframe), PDF déposés
+toujours téléchargés, noms commençant par `=`, `+`, `-` ou `@` refusés (formules dans Excel).
 ## Flux de travail Git
 
 ```

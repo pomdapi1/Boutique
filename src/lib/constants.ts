@@ -82,6 +82,9 @@ export const BRAND_PITCH_MAX = 300;
 export const SALES_NOTES_MAX = 1500;
 
 export const DEFAULT_COMMISSION_RATE = 0.3;
+
+/** Longueur minimale des mots de passe (création, réinitialisation, changement). */
+export const PASSWORD_MIN = 10;
 // Taux de frais SumUp utilisé uniquement si SumUp ne renvoie pas fee_amount
 // (et pour les ventes simulées). Modifiable dans Admin > Paramètres.
 export const DEFAULT_CARD_FEE_RATE = 0.0175;

@@ -8,6 +8,7 @@ import { PageHeader, StatusBadge, Pill } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { DocumentsList } from "@/components/documents-list";
 import { resetPasswordAction, updateCreatorAction } from "@/app/actions/admin";
+import { PASSWORD_MIN } from "@/lib/constants";
 import { DeleteCreatorButton } from "@/components/delete-creator";
 import { PHOTO_TYPE } from "@/lib/constants";
 
@@ -97,7 +98,7 @@ export default async function CreatorDetail({ params }: { params: Promise<{ id: 
           <h2 className="mb-4 text-lg font-semibold">Réinitialiser le mot de passe</h2>
           <ActionForm action={resetPasswordAction} resetOnSuccess className="space-y-4">
             <input type="hidden" name="creatorId" value={creator.id} />
-            <input name="password" type="text" minLength={8} required placeholder="Nouveau mot de passe" aria-label="Nouveau mot de passe" className="input" />
+            <input name="password" type="text" minLength={PASSWORD_MIN} required placeholder="Nouveau mot de passe" aria-label="Nouveau mot de passe" className="input" />
             <SubmitButton className="btn-dark">Mettre à jour</SubmitButton>
           </ActionForm>
         </div>

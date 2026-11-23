@@ -16,10 +16,14 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   try {
     const file = await readDocumentFile(doc);
+    // Images (vignettes des photos) affichées dans la page ; PDF toujours téléchargés,
+    // pour qu'un PDF piégé ne s'ouvre jamais dans l'origine du site.
+    const disposition = doc.mimeType.startsWith("image/") ? "inline" : "attachment";
     return new NextResponse(new Uint8Array(file), {
       headers: {
         "Content-Type": doc.mimeType,
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(doc.filename)}`,
+        "Content-Disposition": `${disposition}; filename*=UTF-8''${encodeURIComponent(doc.filename)}`,
+        "Content-Security-Policy": "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
         "X-Content-Type-Options": "nosniff",
         "Cache-Control": "private, no-store",
       },

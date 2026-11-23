@@ -33,7 +33,7 @@ export async function ensureAdmin() {
     await prisma.user.upsert({
       where: { email },
       create: { email, passwordHash: hash, role: "ADMIN" },
-      update: { passwordHash: hash },
+      update: { passwordHash: hash, sessionVersion: { increment: 1 } },
     });
     console.log(`[bootstrap] mot de passe admin (ré)initialisé pour ${email}. Retirez ADMIN_RESET_PASSWORD et ADMIN_PASSWORD puis redéployez.`);
     return;

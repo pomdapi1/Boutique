@@ -13,6 +13,7 @@ import { nextProductCode } from "./products";
 import { notifyCreator } from "./notifications";
 import { getDefaultVatRate } from "./settings";
 import { vatLabel } from "./constants";
+import { formulaError, looksLikeFormula } from "./text";
 import { effectiveItemName, productsToSumUpCsv } from "./product-import";
 import { norm, productNameFromItemName, type SheetError, type SheetRow } from "./product-sheet";
 
@@ -94,6 +95,10 @@ export async function planAdminImport(rows: SheetRow[], parseErrors: SheetError[
     const name = productNameFromItemName(r.itemName, creator.name);
     if (name.length < 2 || name.length > 120) {
       errors.push({ line: r.line, message: "Nom du produit manquant ou trop long (120 caractères maximum) après la marque." });
+      continue;
+    }
+    if (looksLikeFormula(name)) {
+      errors.push({ line: r.line, message: formulaError("Le nom du produit") });
       continue;
     }
     const byId = r.itemId ? byItemId.get(r.itemId) : undefined;

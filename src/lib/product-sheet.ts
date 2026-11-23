@@ -9,6 +9,7 @@
 import { parseEurosToCents } from "./money";
 import { normalizeReference } from "./reference";
 import { parseVatRate } from "./constants";
+import { formulaError, looksLikeFormula } from "./text";
 
 /** En-têtes exacts du modèle CSV d'articles SumUp, dans l'ordre. */
 export const SUMUP_HEADERS = [
@@ -166,6 +167,7 @@ export function readProductRows(rows: string[][], opts: { admin?: boolean } = {}
     const itemName = get("itemName");
     if (itemName.length < 2) lineErrors.push("Item name (nom de l'article) manquant.");
     else if (itemName.length > 160) lineErrors.push("Item name trop long (160 caractères maximum).");
+    else if (looksLikeFormula(itemName)) lineErrors.push(formulaError("Item name"));
 
     if (get("variations")) lineErrors.push("Les variantes SumUp ne sont pas gérées : une ligne par produit.");
 

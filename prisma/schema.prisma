@@ -13,14 +13,16 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  role         String // ADMIN | CREATOR
-  creatorId    String?   @unique
-  creator      Creator?  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  createdAt    DateTime  @default(now())
-  lastLoginAt  DateTime?
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  role           String // ADMIN | CREATOR
+  creatorId      String?   @unique
+  creator        Creator?  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  lastLoginAt    DateTime?
+  /// Incrémenté au changement de mot de passe : invalide toutes les sessions ouvertes.
+  sessionVersion Int       @default(0)
 
   notificationReads NotificationRead[]
 }
@@ -51,27 +53,27 @@ model Creator {
 }
 
 model Product {
-  id         String   @id @default(cuid())
-  creatorId  String
-  creator    Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  code       String // "012" — unique par créateur
+  id             String   @id @default(cuid())
+  creatorId      String
+  creator        Creator  @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  code           String // "012" — unique par créateur
   // Référence choisie par le créateur (ex. "BAG-01"), unique par créateur,
   // stockée en majuscules. Nulle pour les produits créés avant son ajout.
-  reference  String?
-  name       String
-  priceCents Int
+  reference      String?
+  name           String
+  priceCents     Int
   // TVA en % (colonne « Tax rate (%) » du CSV SumUp) : 0, 5, 10, 15 ou 20 ; null = non applicable
-  vatRate    Float?
-  category   String?
-  stock      Int      @default(0)
-  status     String   @default("PENDING") // PENDING | ACTIVE | REJECTED | ARCHIVED
+  vatRate        Float?
+  category       String?
+  stock          Int      @default(0)
+  status         String   @default("PENDING") // PENDING | ACTIVE | REJECTED | ARCHIVED
   // Nom exact de l'article dans la caisse SumUp (sinon "Marque - Nom")
-  sumupName  String?
+  sumupName      String?
   // Identifiants SumUp de l'article (colonnes « Item id » / « Variant id » du CSV SumUp)
   sumupItemId    String?
   sumupVariantId String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   saleItems SaleItem[]
   movements StockMovement[]
@@ -83,16 +85,16 @@ model Product {
 
 // Demande de modification d'un produit actif, soumise à validation admin
 model ProductRequest {
-  id         String    @id @default(cuid())
-  productId  String
-  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  creatorId  String
-  creator    Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  changes    String // JSON { name?, priceCents?, category? }
-  status     String    @default("PENDING") // PENDING | APPROVED | REJECTED
-  adminNote  String?
-  createdAt  DateTime  @default(now())
-  decidedAt  DateTime?
+  id        String    @id @default(cuid())
+  productId String
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  creatorId String
+  creator   Creator   @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  changes   String // JSON { name?, priceCents?, category? }
+  status    String    @default("PENDING") // PENDING | APPROVED | REJECTED
+  adminNote String?
+  createdAt DateTime  @default(now())
+  decidedAt DateTime?
 }
 
 model StockMovement {

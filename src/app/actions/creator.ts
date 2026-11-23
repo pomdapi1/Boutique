@@ -9,7 +9,7 @@ import { notifyAdmins } from "@/lib/notifications";
 import { DocumentError, deleteDocument, saveDocument } from "@/lib/documents";
 import { productLabel } from "@/lib/utils";
 import { normalizeReference } from "@/lib/reference";
-import { charCount, normalizeText } from "@/lib/text";
+import { charCount, formulaError, looksLikeFormula, normalizeText } from "@/lib/text";
 import { applyImport, describeUpdate, planImport, readCsv, uploadedCsv } from "@/lib/product-import";
 import type { ImportState } from "@/lib/import-state";
 import { BRAND_PITCH_MAX, SALES_NOTES_MAX, parseVatRate } from "@/lib/constants";
@@ -51,9 +51,19 @@ export async function adjustStockAction(_p: ActionState, fd: FormData): Promise<
 }
 
 const productSchema = z.object({
-  name: z.string().trim().min(2, "Nom trop court").max(120),
+  name: z
+    .string()
+    .trim()
+    .min(2, "Nom trop court")
+    .max(120)
+    .refine((s) => !looksLikeFormula(s), formulaError("Le nom")),
   price: z.string(),
-  category: z.string().trim().max(60).optional(),
+  category: z
+    .string()
+    .trim()
+    .max(60)
+    .refine((s) => !looksLikeFormula(s), formulaError("La catégorie"))
+    .optional(),
 });
 
 export async function createProductAction(_p: ActionState, fd: FormData): Promise<ActionState> {

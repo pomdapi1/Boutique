@@ -21,6 +21,8 @@ import { applyAdminImport, describeAdminUpdate, planAdminImport } from "@/lib/pr
 import { PRODUCT_STATUS_LABEL, VAT_HINT, VAT_RATES, parseVatRate } from "@/lib/constants";
 import type { ImportState } from "@/lib/import-state";
 import { isReferenceTaken } from "@/lib/products";
+import { formulaError, looksLikeFormula } from "@/lib/text";
+import { PASSWORD_MIN } from "@/lib/constants";
 import type { ActionState } from "@/components/action-form";
 
 function fail(e: z.ZodError): ActionState {
@@ -28,6 +30,19 @@ function fail(e: z.ZodError): ActionState {
 }
 
 const pct = z.coerce.number().min(0, "Taux invalide").max(100, "Taux invalide");
+// La marque préfixe le nom des articles et remplit la colonne Category des exports CSV.
+const brandName = z
+  .string()
+  .trim()
+  .min(2, "Nom de la marque trop court")
+  .max(80)
+  .refine((s) => !looksLikeFormula(s), formulaError("Le nom de la marque"));
+const ownerName = z
+  .string()
+  .trim()
+  .min(2, "Nom du créateur trop court")
+  .max(80)
+  .refine((s) => !looksLikeFormula(s), formulaError("Le nom du créateur"));
 
 // ---------- Créateurs ----------
 
@@ -35,10 +50,10 @@ export async function createCreatorAction(_p: ActionState, fd: FormData): Promis
   await requireAdmin();
   const parsed = z
     .object({
-      ownerName: z.string().trim().min(2, "Nom du créateur trop court").max(80),
-      name: z.string().trim().min(2, "Nom de la marque trop court").max(80),
+      ownerName,
+      name: brandName,
       email: z.string().trim().toLowerCase().email("Email invalide"),
-      password: z.string().min(8, "Mot de passe : 8 caractères minimum"),
+      password: z.string().min(PASSWORD_MIN, `Mot de passe : ${PASSWORD_MIN} caractères minimum`).max(200),
       commission: z.union([z.literal(""), pct]).optional(),
     })
     .safeParse(Object.fromEntries(fd));
@@ -66,8 +81,8 @@ export async function updateCreatorAction(_p: ActionState, fd: FormData): Promis
   const parsed = z
     .object({
       id: z.string(),
-      ownerName: z.string().trim().min(2, "Nom du créateur trop court").max(80),
-      name: z.string().trim().min(2, "Nom de la marque trop court").max(80),
+      ownerName,
+      name: brandName,
       email: z.string().trim().toLowerCase().email("Email invalide"),
       commission: pct,
       active: z.string().optional(),
@@ -140,13 +155,15 @@ export async function setCreatorActiveAction(_p: ActionState, fd: FormData): Pro
 export async function resetPasswordAction(_p: ActionState, fd: FormData): Promise<ActionState> {
   await requireAdmin();
   const password = String(fd.get("password") ?? "");
-  if (password.length < 8) return { error: "8 caractères minimum." };
+  if (password.length < PASSWORD_MIN) return { error: `${PASSWORD_MIN} caractères minimum.` };
+  if (password.length > 200) return { error: "Mot de passe trop long." };
   const r = await prisma.user.updateMany({
     where: { creatorId: String(fd.get("creatorId")) },
-    data: { passwordHash: await hashPassword(password) },
+    // sessionVersion + 1 : les sessions ouvertes du créateur sont révoquées
+    data: { passwordHash: await hashPassword(password), sessionVersion: { increment: 1 } },
   });
   if (r.count === 0) return { error: "Compte introuvable." };
-  return { ok: true, message: "Mot de passe mis à jour." };
+  return { ok: true, message: "Mot de passe mis à jour. Le créateur est déconnecté de tous ses appareils." };
 }
 
 // ---------- Produits ----------
@@ -222,6 +239,11 @@ export async function adminUpdateProductAction(_p: ActionState, fd: FormData): P
   if (!stock.success) return { error: "Stock invalide." };
   const name = String(fd.get("name") ?? "").trim();
   if (name.length < 2) return { error: "Nom trop court." };
+  if (looksLikeFormula(name)) return { error: formulaError("Le nom") };
+  const category = String(fd.get("category") ?? "").trim();
+  if (looksLikeFormula(category)) return { error: formulaError("La catégorie") };
+  const sumupName = String(fd.get("sumupName") ?? "").trim();
+  if (looksLikeFormula(sumupName)) return { error: formulaError("Le nom dans la caisse") };
   const status = String(fd.get("status"));
   if (!["PENDING", "ACTIVE", "REJECTED", "ARCHIVED"].includes(status)) return { error: "Statut invalide." };
   const vat = parseVatRate(fd.get("vatRate"));
@@ -246,8 +268,8 @@ export async function adminUpdateProductAction(_p: ActionState, fd: FormData): P
         vatRate: vat.value,
         stock: stock.data,
         status,
-        category: String(fd.get("category") ?? "").trim() || null,
-        sumupName: String(fd.get("sumupName") ?? "").trim() || null,
+        category: category || null,
+        sumupName: sumupName || null,
       },
     }),
     ...(stock.data !== product.stock
